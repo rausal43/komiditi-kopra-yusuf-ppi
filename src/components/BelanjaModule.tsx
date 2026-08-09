@@ -3,7 +3,7 @@ import { TimbanganModule } from './TimbanganModule';
 import { PanjarModule } from './PanjarModule';
 import { NotaBelanjaModal } from './NotaBelanjaModal';
 import { useApp } from '../context/AppContext';
-import { ShoppingCart, Receipt } from 'lucide-react';
+import { ShoppingCart, Download } from 'lucide-react';
 
 export const BelanjaModule: React.FC = () => {
   const { batchList, belanjaSubTab, setBelanjaSubTab } = useApp();
@@ -29,7 +29,7 @@ export const BelanjaModule: React.FC = () => {
               style={{ padding: '5px 10px', fontSize: '11px', fontWeight: '800', color: '#FF5000', borderColor: '#FF5000', whiteSpace: 'nowrap', flexShrink: 0 }}
               onClick={() => setShowNotaModal(true)}
             >
-              <Receipt size={14} /> Cetak Struk Nota
+              <Download size={14} /> Download Nota
             </button>
 
             <div className="role-switcher-badge" style={{ background: '#F1F5F9', whiteSpace: 'nowrap', flexShrink: 0 }}>

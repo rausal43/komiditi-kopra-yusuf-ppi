@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { X, Printer, Receipt, Filter } from 'lucide-react';
+import { X, Download, Filter } from 'lucide-react';
 
 interface NotaBelanjaModalProps {
-  batchId: string;
+  batchId?: string;
+  initialBatchId?: string;
   onClose: () => void;
 }
 
-export const NotaBelanjaModal: React.FC<NotaBelanjaModalProps> = ({ initialBatchId, onClose }: { initialBatchId?: string; batchId?: string; onClose: () => void }) => {
+export const NotaBelanjaModal: React.FC<NotaBelanjaModalProps> = ({ initialBatchId, onClose }) => {
   const { batchList, timbanganList, panjarList } = useApp();
   const [selectedBatchId, setSelectedBatchId] = useState(initialBatchId || batchList[0]?.id || '');
   const [selectedTimbanganId, setSelectedTimbanganId] = useState<string>('ALL');
@@ -28,39 +29,38 @@ export const NotaBelanjaModal: React.FC<NotaBelanjaModalProps> = ({ initialBatch
   const totalPanjarNominal = batchPanjar.reduce((acc, curr) => acc + curr.nominalDp, 0);
   const sisaPelunasan = totalBelanjaNominal - totalPanjarNominal;
 
-  const handlePrint = () => {
+  const handleDownloadReceipt = () => {
     window.print();
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', width: '92%', background: '#FFFFFF' }}>
-        {/* Modal Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px dashed #E2E8F0', paddingBottom: '12px', marginBottom: '12px' }}>
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: '800', color: '#FF5000', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Receipt size={16} /> NOTA REKAPITULASI BELANJA
-            </div>
-            <div style={{ fontSize: '10px', color: '#64748B', fontWeight: '700' }}>PT KOPRA SEJATI • Gudang Sekely</div>
+      <div className="modal-card printable-thermal-receipt" onClick={e => e.stopPropagation()} style={{ maxWidth: '340px', width: '92%', background: '#FFFFFF', padding: '16px 14px' }}>
+        {/* Receipt Header (58mm / 80mm Standard Thermal Format) */}
+        <div style={{ textAlign: 'center', borderBottom: '2px dashed #0F172A', paddingBottom: '10px', marginBottom: '10px', position: 'relative' }}>
+          <div style={{ fontSize: '15px', fontWeight: '900', color: '#0F172A', letterSpacing: '0.5px' }}>
+            PT KOPRA SEJATI
           </div>
-          <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={onClose}>
-            <X size={20} color="#64748B" />
+          <div style={{ fontSize: '10px', color: '#64748B', fontWeight: '700' }}>GUDANG PENAMPUNGAN SEKELY</div>
+          <div style={{ fontSize: '9px', color: '#94A3B8', marginTop: '2px' }}>Struk Bukti Pembelian Kopra</div>
+          <button className="no-print" style={{ position: 'absolute', top: '0px', right: '0px', background: 'none', border: 'none', cursor: 'pointer' }} onClick={onClose}>
+            <X size={18} color="#64748B" />
           </button>
         </div>
 
         {/* Selection Pickers: Batch & Specific Timbangan Record */}
-        <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '10px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Filter size={12} color="#FF5000" />
-            <span style={{ fontSize: '10px', fontWeight: '800', color: '#0F172A' }}>PILIH BATCH & TRANSAKSI</span>
+        <div className="no-print" style={{ background: '#F8FAFC', borderRadius: '10px', padding: '8px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Filter size={11} color="#FF5000" />
+            <span style={{ fontSize: '10px', fontWeight: '800', color: '#0F172A' }}>FILTER NOTA BATCH</span>
           </div>
 
-          <div className="grid-2" style={{ gap: '6px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div>
-              <label style={{ fontSize: '9px', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '2px' }}>Pilih Batch:</label>
+              <label style={{ fontSize: '9px', fontWeight: '700', color: '#64748B' }}>Pilih Batch:</label>
               <select
                 className="form-select"
-                style={{ padding: '4px 6px', fontSize: '10px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}
+                style={{ padding: '3px 6px', fontSize: '10px' }}
                 value={selectedBatchId}
                 onChange={e => {
                   setSelectedBatchId(e.target.value);
@@ -74,54 +74,65 @@ export const NotaBelanjaModal: React.FC<NotaBelanjaModalProps> = ({ initialBatch
             </div>
 
             <div>
-              <label style={{ fontSize: '9px', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '2px' }}>Pilih Timbangan / Nota:</label>
+              <label style={{ fontSize: '9px', fontWeight: '700', color: '#64748B' }}>Pilih Timbangan:</label>
               <select
                 className="form-select"
-                style={{ padding: '4px 6px', fontSize: '10px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}
+                style={{ padding: '3px 6px', fontSize: '10px' }}
                 value={selectedTimbanganId}
                 onChange={e => setSelectedTimbanganId(e.target.value)}
               >
-                <option value="ALL">Semua Data Timbangan ({allBatchTimbangan.length})</option>
+                <option value="ALL">Semua Timbangan ({allBatchTimbangan.length})</option>
                 {allBatchTimbangan.map(t => (
-                  <option key={t.id} value={t.id}>{t.id} - {t.namaTuanToko} (Rp {t.totalNominalBeli.toLocaleString('id-ID')})</option>
+                  <option key={t.id} value={t.id}>{t.id} - {t.namaTuanToko}</option>
                 ))}
               </select>
             </div>
           </div>
         </div>
 
-        {/* Itemized Calculation Details */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B' }}>
-            <span>Total Koli / Karung:</span> <strong>{totalKarung} Karung</strong>
+        {/* Thermal Receipt Monospaced Details */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '11px', fontFamily: 'monospace, monospace', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Batch ID:</span> <strong>{selectedBatchId}</strong>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B' }}>
-            <span>Berat Bruto Timbangan:</span> <strong>{totalBeratBruto.toLocaleString('id-ID')} kg</strong>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Tanggal:</span> <span>{new Date().toISOString().split('T')[0]}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B' }}>
-            <span>Potongan Kadar Air:</span> <strong style={{ color: '#EF4444' }}>-{totalPotonganAir.toLocaleString('id-ID')} kg</strong>
+          <div style={{ borderBottom: '1px dashed #CBD5E1', margin: '4px 0' }} />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Total Karung:</span> <span>{totalKarung} Karung</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0F172A', fontWeight: '800', borderTop: '1px solid #E2E8F0', paddingTop: '4px' }}>
-            <span>Netto Ditimbang:</span> <strong>{totalNettoFinal.toLocaleString('id-ID')} kg</strong>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Gross Timbangan:</span> <span>{totalBeratBruto.toLocaleString('id-ID')} kg</span>
           </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#EF4444' }}>
+            <span>Potongan Air:</span> <span>-{totalPotonganAir.toLocaleString('id-ID')} kg</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', borderTop: '1px solid #0F172A', paddingTop: '3px' }}>
+            <span>Netto Final:</span> <span>{totalNettoFinal.toLocaleString('id-ID')} kg</span>
+          </div>
+
+          <div style={{ borderBottom: '1px dashed #CBD5E1', margin: '4px 0' }} />
+
           <div style={{ display: 'flex', justifyContent: 'space-between', color: '#10B981', fontWeight: '800' }}>
-            <span>Total Nominal Belanja:</span> <strong>Rp {totalBelanjaNominal.toLocaleString('id-ID')}</strong>
+            <span>Total Belanja:</span> <span>Rp {totalBelanjaNominal.toLocaleString('id-ID')}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: '#FF5000', fontWeight: '800' }}>
-            <span>Potongan Panjar DP:</span> <strong>-Rp {totalPanjarNominal.toLocaleString('id-ID')}</strong>
+            <span>Potongan Panjar:</span> <span>-Rp {totalPanjarNominal.toLocaleString('id-ID')}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: '800', color: '#0F172A', borderTop: '2px solid #0F172A', paddingTop: '6px', marginTop: '2px' }}>
-            <span>SISA PELUNASAN:</span> <strong style={{ color: sisaPelunasan >= 0 ? '#10B981' : '#EF4444' }}>Rp {sisaPelunasan.toLocaleString('id-ID')}</strong>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '900', color: '#0F172A', borderTop: '2px dashed #0F172A', paddingTop: '6px', marginTop: '2px' }}>
+            <span>SISA PELUNASAN:</span> <span>Rp {sisaPelunasan.toLocaleString('id-ID')}</span>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button type="button" className="btn btn-outline" style={{ flex: 1, fontSize: '11px' }} onClick={onClose}>
+        <div className="no-print" style={{ display: 'flex', gap: '6px' }}>
+          <button type="button" className="btn btn-outline" style={{ flex: 1, fontSize: '10px' }} onClick={onClose}>
             Batal
           </button>
-          <button type="button" className="btn btn-primary" style={{ flex: 1, fontSize: '11px' }} onClick={handlePrint}>
-            <Printer size={14} /> Cetak Struk Nota
+          <button type="button" className="btn btn-primary" style={{ flex: 1, fontSize: '10px' }} onClick={handleDownloadReceipt}>
+            <Download size={13} /> Download Nota
           </button>
         </div>
       </div>
