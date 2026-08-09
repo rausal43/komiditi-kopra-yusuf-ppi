@@ -456,7 +456,7 @@ body {
   font-weight: 800;
 }
 
-/* Form Controls */
+/* Form Controls & Textarea Styling Fix */
 .form-group {
   margin-bottom: 12px;
 }
@@ -470,7 +470,8 @@ body {
 }
 
 .form-input,
-.form-select {
+.form-select,
+.form-textarea {
   width: 100%;
   max-width: 100% !important;
   padding: 8px 12px;
@@ -479,9 +480,20 @@ body {
   font-size: 12px;
   outline: none;
   background: #FFFFFF;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
+  color: var(--text-dark);
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--primary-orange);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 52px;
 }
 
 /* Mobile Nav Bar */
