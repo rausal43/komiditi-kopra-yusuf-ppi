@@ -72,8 +72,7 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()}>
-        <div className="modal-drag-handle" />
+      <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
         <div className="modal-header">
           <div className="modal-title">Input Timbangan Karung Lapangan</div>
           <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={onClose}>
@@ -86,7 +85,7 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
             <div className="form-group">
               <label className="form-label">Target Batch (Dipilih)</label>
               <button type="button" className="form-input" style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontWeight: '800', color: '#FF5000' }} onClick={() => setShowBatchPicker(true)}>
-                <span>{selectedBatchId} ({activeBatchObj?.statusMilestone || 'Gudang'})</span>
+                <span>{selectedBatchId} - {activeBatchObj?.namaBatch || 'Halmahera'}</span>
                 <ChevronDown size={16} color="#64748B" />
               </button>
             </div>
@@ -112,7 +111,6 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
             <textarea className="form-textarea" rows={2} value={rincianKarungInput} onChange={e => { setRincianKarungInput(e.target.value); const list = e.target.value.split(',').filter(v => v.trim()); setTaraInput(list.length); }} required />
           </div>
 
-          {/* Separate Input Fields for Tara & Kadar Air */}
           <div className="grid-2">
             <div className="form-group">
               <label className="form-label">Tara Karung (kg)</label>
@@ -126,11 +124,12 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
             </div>
           </div>
 
-          <div style={{ background: 'var(--brand-orange-light)', borderRadius: '10px', padding: '10px 12px', marginBottom: '10px' }}>
-            <div style={{ fontSize: '11px', fontWeight: '800', color: '#FF5000', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* Clean Mobile 2x2 Layout Box for Kalkulator Netto */}
+          <div style={{ background: 'rgba(255, 80, 0, 0.08)', borderRadius: '10px', padding: '10px 12px', marginBottom: '10px' }}>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: '#FF5000', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Calculator size={14} /> Kalkulator Netto & Rafaksi Kadar Air
             </div>
-            <div className="grid-4" style={{ fontSize: '10px', gap: '6px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', fontSize: '10px' }}>
               <div>Gross: <strong>{totalGross.toLocaleString('id-ID')} kg</strong></div>
               <div>Tara Karung: <strong style={{ color: '#EF4444' }}>-{taraKarungVal} kg</strong></div>
               <div>Pot. Air ({rafaksiPercent.toFixed(1)}%): <strong style={{ color: '#EF4444' }}>-{potonganKadarAirKg.toFixed(1)} kg</strong></div>
@@ -147,7 +146,7 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
             <div className="form-group">
               <label className="form-label">Potong Panjar DP ({selectedBatchId})</label>
               <button type="button" className="form-input" style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontWeight: '700', fontSize: '11px', color: panjarSelected ? '#FF5000' : '#0F172A' }} onClick={() => setShowPanjarPicker(true)}>
-                <span>{panjarSelected ? `${panjarSelected.noKwitansi} - ${panjarSelected.namaPenerima} (DP Rp ${panjarSelected.nominalDp.toLocaleString('id-ID')})` : '-- Tanpa Potongan DP --'}</span>
+                <span>{panjarSelected ? `${panjarSelected.noKwitansi} - ${panjarSelected.namaPenerima}` : '-- Tanpa Potongan DP --'}</span>
                 <ChevronDown size={16} color="#64748B" />
               </button>
             </div>
@@ -165,10 +164,10 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
               <div style={{ fontWeight: '700', fontSize: '11px' }}>Total Pembelian: <strong>Rp {totalNominalBeli.toLocaleString('id-ID')}</strong></div>
               <div style={{ fontSize: '10px', color: '#64748B' }}>Proyeksi Sisa Saldo: <strong>Rp {proyeksiSisaModal.toLocaleString('id-ID')}</strong></div>
             </div>
-            <span style={{ fontWeight: '800', fontSize: '15px', color: '#10B981' }}>Rp {sisaPelunasan.toLocaleString('id-ID')}</span>
+            <span style={{ fontWeight: '800', fontSize: '14px', color: '#10B981' }}>Rp {sisaPelunasan.toLocaleString('id-ID')}</span>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', paddingTop: '4px' }}>
             <button type="button" className="btn btn-outline" style={{ flex: 1 }} onClick={onClose}>Batal</button>
             <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Simpan & Potong Saldo</button>
           </div>
