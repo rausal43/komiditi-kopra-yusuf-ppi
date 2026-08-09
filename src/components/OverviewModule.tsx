@@ -91,23 +91,23 @@ export const OverviewModule: React.FC = () => {
 
       {/* Interactive Pie/Donut Chart Section per Selected Batch */}
       <div className="grid-2">
-        {/* Donut Chart Component */}
+        {/* Donut Chart Component with Overflow Fix */}
         <div className="card" style={{ padding: '16px 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <PieChart size={16} color="#FF5000" /> Analisis P&L Chart Lingkaran
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '100%' }}>
               <Filter size={13} color="#FF5000" />
               <select
                 className="form-select"
-                style={{ width: '150px', padding: '4px 8px', fontSize: '11px', fontWeight: '700' }}
+                style={{ width: '130px', maxWidth: '130px', padding: '4px 6px', fontSize: '10px', fontWeight: '700', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
                 value={selectedBatchId}
                 onChange={e => setSelectedBatchId(e.target.value)}
               >
                 {batchList.map(b => (
-                  <option key={b.id} value={b.id}>{b.id} ({b.namaBatch})</option>
+                  <option key={b.id} value={b.id}>{b.id}</option>
                 ))}
               </select>
             </div>
