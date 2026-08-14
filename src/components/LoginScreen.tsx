@@ -146,10 +146,6 @@ export const LoginScreen: React.FC = () => {
             {isLoading ? 'Memverifikasi...' : 'Masuk Aplikasi'} <ArrowRight size={16} />
           </button>
         </form>
-
-        <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '10px', color: '#94A3B8' }}>
-          🛡️ Terkoneksi secara aman dengan Supabase Real-Time Database
-        </div>
       </div>
     </div>
   );
