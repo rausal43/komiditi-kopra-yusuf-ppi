@@ -13,15 +13,16 @@ export const dbService = {
         supabase.from('price_settings').select('*').single(),
       ]);
 
+      // If queries succeeded (data is array), return data from DB (even if empty)
       return {
-        batches: batchesRes.data && batchesRes.data.length > 0 ? (batchesRes.data as BatchShipment[]) : null,
-        timbangan: timbanganRes.data && timbanganRes.data.length > 0 ? (timbanganRes.data as TimbanganKarung[]) : null,
-        panjar: panjarRes.data && panjarRes.data.length > 0 ? (panjarRes.data as PanjarDP[]) : null,
-        settlement: settlementRes.data && settlementRes.data.length > 0 ? (settlementRes.data as PabrikSettlement[]) : null,
-        priceSetting: priceRes.data ? (priceRes.data as MasterPriceSetting) : null,
+        batches: batchesRes.error ? null : (batchesRes.data as BatchShipment[]),
+        timbangan: timbanganRes.error ? null : (timbanganRes.data as TimbanganKarung[]),
+        panjar: panjarRes.error ? null : (panjarRes.data as PanjarDP[]),
+        settlement: settlementRes.error ? null : (settlementRes.data as PabrikSettlement[]),
+        priceSetting: priceRes.error ? null : (priceRes.data as MasterPriceSetting),
       };
     } catch (err) {
-      console.warn('Supabase fetch error, fallback to mock data:', err);
+      console.warn('Supabase fetch error:', err);
       return null;
     }
   },

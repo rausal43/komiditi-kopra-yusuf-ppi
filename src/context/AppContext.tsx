@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Role, PanjarDP, TimbanganKarung, BatchShipment, SettlementPabrik, MasterPriceSetting, AIWeeklyReport } from '../types';
-import { initialPanjar, initialTimbangan, initialBatch, initialSettlement, initialPriceSetting, initialAIReports } from '../data/mockData';
+import { initialPriceSetting } from '../data/mockData';
 import { dbService } from '../lib/dbService';
 
 export type ActiveModalType = 'NONE' | 'BATCH' | 'TIMBANGAN' | 'PANJAR' | 'SETTLEMENT' | 'TRANSSHIPMENT';
@@ -55,12 +55,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeModal, setActiveModal] = useState<ActiveModalType>('NONE');
   const [belanjaSubTab, setBelanjaSubTab] = useState<'timbangan' | 'panjar'>('timbangan');
 
-  const [panjarList, setPanjarList] = useState<PanjarDP[]>(initialPanjar);
-  const [timbanganList, setTimbanganList] = useState<TimbanganKarung[]>(initialTimbangan);
-  const [batchList, setBatchList] = useState<BatchShipment[]>(initialBatch);
-  const [settlementList, setSettlementList] = useState<SettlementPabrik[]>(initialSettlement);
+  const [panjarList, setPanjarList] = useState<PanjarDP[]>([]);
+  const [timbanganList, setTimbanganList] = useState<TimbanganKarung[]>([]);
+  const [batchList, setBatchList] = useState<BatchShipment[]>([]);
+  const [settlementList, setSettlementList] = useState<SettlementPabrik[]>([]);
   const [priceSetting, setPriceSetting] = useState<MasterPriceSetting>(initialPriceSetting);
-  const [aiReports, setAiReports] = useState<AIWeeklyReport[]>(initialAIReports);
+  const [aiReports, setAiReports] = useState<AIWeeklyReport[]>([]);
 
   const [daftarAkunOwner, setDaftarAkunOwner] = useState<string[]>(initialPriceSetting.daftarAkunOwner);
   const [daftarKapal, setDaftarKapal] = useState<string[]>(['KM Sabuk Nusantara', 'Kapal Feeder Sekely', 'KM Lintas Maluku']);
