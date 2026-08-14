@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { BatchPickerModal } from './BatchPickerModal';
 import { PanjarPickerModal } from './PanjarPickerModal';
-import { X, Calculator, Wallet, ChevronDown, Droplets, Plus, Trash2, Camera, ImageIcon } from 'lucide-react';
+import { X, Calculator, Wallet, ChevronDown, Droplets, Plus, Trash2, Camera } from 'lucide-react';
 
 interface KarungRow {
   berat: number | '';

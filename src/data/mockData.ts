@@ -1,4 +1,4 @@
-import type { BatchShipment, TimbanganKarung, PanjarDP, PabrikSettlement, PriceSetting, AIWeeklyReport, KarungItem } from '../types';
+import type { BatchShipment, TimbanganKarung, PanjarDP, PabrikSettlement, PriceSetting, AIWeeklyReport } from '../types';
 
 export const initialPriceSetting: PriceSetting = {
   hargaAcuanPabrikWilmar: 14800,
