@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Role, PanjarDP, TimbanganKarung, BatchShipment, SettlementPabrik, MasterPriceSetting, AIWeeklyReport } from '../types';
 import { initialPanjar, initialTimbangan, initialBatch, initialSettlement, initialPriceSetting, initialAIReports } from '../data/mockData';
+import { dbService } from '../lib/dbService';
 
 export type ActiveModalType = 'NONE' | 'BATCH' | 'TIMBANGAN' | 'PANJAR' | 'SETTLEMENT' | 'TRANSSHIPMENT';
 
@@ -65,6 +66,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [daftarKapal, setDaftarKapal] = useState<string[]>(['KM Sabuk Nusantara', 'Kapal Feeder Sekely', 'KM Lintas Maluku']);
   const [daftarGudang, setDaftarGudang] = useState<string[]>(['Gudang Utama Sekely', 'Gudang Halmahera Barat']);
 
+  // Fetch data from Supabase DB on mount if tables exist
+  useEffect(() => {
+    async function loadData() {
+      const data = await dbService.fetchAllData();
+      if (data) {
+        if (data.batches) setBatchList(data.batches);
+        if (data.timbangan) setTimbanganList(data.timbangan);
+        if (data.panjar) setPanjarList(data.panjar);
+        if (data.settlement) setSettlementList(data.settlement);
+        if (data.priceSetting) setPriceSetting(data.priceSetting);
+      }
+    }
+    loadData();
+  }, []);
+
   const addAkunOwner = (nama: string) => {
     if (nama.trim() && !daftarAkunOwner.includes(nama.trim())) {
       setDaftarAkunOwner(prev => [...prev, nama.trim()]);
@@ -109,26 +125,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addPanjar = (newPanjar: Omit<PanjarDP, 'id'>) => {
     const id = `p-${Date.now()}`;
-    setPanjarList(prev => [{ ...newPanjar, id }, ...prev]);
+    const fullPanjar = { ...newPanjar, id };
+    setPanjarList(prev => [fullPanjar, ...prev]);
+    dbService.insertPanjar(fullPanjar);
   };
 
   const addTimbangan = (newTimbangan: Omit<TimbanganKarung, 'id'>) => {
     const id = `t-${Date.now()}`;
-    setTimbanganList(prev => [{ ...newTimbangan, id }, ...prev]);
+    const fullTimbangan = { ...newTimbangan, id };
+    setTimbanganList(prev => [fullTimbangan, ...prev]);
+    dbService.insertTimbangan(fullTimbangan);
   };
 
   const addBatch = (newBatch: Omit<BatchShipment, 'id'>) => {
     const id = `BATCH-2026-${String(batchList.length + 1).padStart(2, '0')}C`;
-    setBatchList(prev => [{ ...newBatch, id }, ...prev]);
+    const fullBatch = { ...newBatch, id };
+    setBatchList(prev => [fullBatch, ...prev]);
+    dbService.insertBatch(fullBatch);
   };
 
   const updateBatchMilestone = (id: string, status: BatchShipment['statusMilestone'], lokasi: string) => {
     setBatchList(prev => prev.map(b => (b.id === id ? { ...b, statusMilestone: status, lokasiSaatIni: lokasi } : b)));
+    dbService.updateBatchMilestone(id, status, lokasi);
   };
 
   const addSettlement = (newSettlement: Omit<SettlementPabrik, 'id'>) => {
     const id = `s-${Date.now()}`;
-    setSettlementList(prev => [{ ...newSettlement, id }, ...prev]);
+    const fullSettlement = { ...newSettlement, id };
+    setSettlementList(prev => [fullSettlement, ...prev]);
     setBatchList(prev =>
       prev.map(b =>
         b.id === newSettlement.batchId
@@ -136,10 +160,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           : b
       )
     );
+    dbService.insertSettlement(fullSettlement);
+    dbService.updateBatchMilestone(newSettlement.batchId, 'Selesai Pabrik', 'Pabrik Bitung (Settlement Selesai)');
   };
 
   const updatePriceSetting = (setting: Partial<MasterPriceSetting>) => {
     setPriceSetting(prev => ({ ...prev, ...setting }));
+    dbService.updatePriceSetting(setting);
   };
 
   const generateAIReport = () => {
