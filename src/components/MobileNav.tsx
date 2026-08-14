@@ -7,7 +7,7 @@ export const MobileNav: React.FC = () => {
 
   const navItems = [
     { id: 'batch', label: 'Beranda', icon: Home, roles: ['sekely', 'owner', 'logistik', 'SEKELY', 'OWNER', 'LOGISTIK'] },
-    { id: 'belanja', label: 'Belanja', icon: ShoppingCart, roles: ['sekely', 'owner', 'SEKELY', 'OWNER'] },
+    { id: 'belanja', label: 'Belanja', icon: ShoppingCart, roles: ['sekely', 'owner', 'logistik', 'SEKELY', 'OWNER', 'LOGISTIK'] },
     { id: 'action', label: 'Input Baru', icon: Plus, isAction: true, roles: ['sekely', 'owner', 'logistik', 'SEKELY', 'OWNER', 'LOGISTIK'] },
     { id: 'transshipment', label: 'Pengiriman', icon: Ship, roles: ['logistik', 'owner', 'LOGISTIK', 'OWNER'] },
     { id: 'settlement', label: 'Pabrik', icon: Factory, roles: ['owner', 'logistik', 'OWNER', 'LOGISTIK'] },

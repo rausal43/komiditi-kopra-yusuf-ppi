@@ -12,7 +12,7 @@ export const Sidebar: React.FC = () => {
 
   const navItems = [
     { id: 'batch', label: 'Beranda', icon: Home, roles: ['sekely', 'owner', 'logistik', 'SEKELY', 'OWNER', 'LOGISTIK'] },
-    { id: 'belanja', label: 'Belanja Kopra', icon: ShoppingCart, roles: ['sekely', 'owner', 'SEKELY', 'OWNER'] },
+    { id: 'belanja', label: 'Belanja Kopra', icon: ShoppingCart, roles: ['sekely', 'owner', 'logistik', 'SEKELY', 'OWNER', 'LOGISTIK'] },
     { id: 'transshipment', label: 'Pengiriman Kapal', icon: Ship, roles: ['logistik', 'owner', 'LOGISTIK', 'OWNER'] },
     { id: 'settlement', label: 'Setor Pabrik', icon: Factory, roles: ['owner', 'logistik', 'OWNER', 'LOGISTIK'] },
     { id: 'report', label: 'Overview', icon: PieChart, roles: ['owner', 'OWNER'] },
