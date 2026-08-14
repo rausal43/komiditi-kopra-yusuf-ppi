@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { X, Calculator, Scale } from 'lucide-react';
+import { X, Calculator, Scale, Camera, ImageIcon } from 'lucide-react';
 
 interface SettlementModalProps {
   onClose: () => void;
@@ -9,6 +9,7 @@ interface SettlementModalProps {
     beratGrossPabrik: number; kadarAirLabPercent: number; potonganKadarAirKg: number;
     beratNettoFinalPabrik: number; hargaAcuanPabrik: number; totalPenerimaanPabrik: number;
     susutTonasePercent: number; totalHppBatch: number; nettProfitMargin: number;
+    fotoNotaTimbangPabrik?: string;
   }) => void;
 }
 
@@ -26,6 +27,47 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
   const [beratGrossStr, setBeratGrossStr] = useState('10.080 kg');
   const [kadarAirLabPercent, setKadarAirLabPercent] = useState<number | ''>(5.2);
   const [hargaAcuanStr, setHargaAcuanStr] = useState(`Rp ${priceSetting.hargaAcuanPabrikWilmar.toLocaleString('id-ID')}`);
+  const [fotoNotaTimbang, setFotoNotaTimbang] = useState<string>('');
+  const [previewFoto, setPreviewFoto] = useState(false);
+  const fotoInputRef = useRef<HTMLInputElement>(null);
+
+  const compressImage = (file: File, maxSizeKB: number = 300): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let w = img.width;
+          let h = img.height;
+          const maxDim = 1200;
+          if (w > maxDim || h > maxDim) {
+            const ratio = Math.min(maxDim / w, maxDim / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0, w, h);
+          let quality = 0.7;
+          let result = canvas.toDataURL('image/jpeg', quality);
+          while (result.length > maxSizeKB * 1024 * 1.37 && quality > 0.1) {
+            quality -= 0.1;
+            result = canvas.toDataURL('image/jpeg', quality);
+          }
+          resolve(result);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFotoUpload = async (file: File) => {
+    const compressed = await compressImage(file);
+    setFotoNotaTimbang(compressed);
+  };
 
   const selectedBatch = batchList.find(b => b.id === selectedBatchId) || batchList[0];
 
@@ -70,6 +112,7 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
       batchId: selectedBatchId, tglMasukPabrik, pabrikTujuan, beratGrossPabrik: grossPabrikNum,
       kadarAirLabPercent: kadarAirLabNum, potonganKadarAirKg, beratNettoFinalPabrik, hargaAcuanPabrik: hargaPabrikNum,
       totalPenerimaanPabrik, susutTonasePercent, totalHppBatch: realTotalHpp, nettProfitMargin,
+      fotoNotaTimbangPabrik: fotoNotaTimbang || undefined,
     });
   };
 
@@ -136,26 +179,103 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
             <input type="text" className="form-input" value={hargaAcuanStr} onChange={e => { const num = parseDigits(e.target.value); setHargaAcuanStr(num ? `Rp ${num.toLocaleString('id-ID')}` : ''); }} placeholder="Rp 0" required />
           </div>
 
+          {/* FOTO NOTA TIMBANG PABRIK */}
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Camera size={13} color="#FF5000" /> Foto Nota Timbang Pabrik (Opsional)
+            </label>
+            <input
+              ref={fotoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: 'none' }}
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) handleFotoUpload(file);
+              }}
+            />
+            {fotoNotaTimbang ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '80px', height: '60px', borderRadius: '8px', overflow: 'hidden',
+                    border: '2px solid #10B981', cursor: 'pointer', flexShrink: 0,
+                  }}
+                  onClick={() => setPreviewFoto(true)}
+                >
+                  <img src={fotoNotaTimbang} alt="Nota" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '10px', color: '#10B981', fontWeight: '700' }}>✓ Foto ter-upload</span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button type="button" onClick={() => fotoInputRef.current?.click()}
+                      style={{ fontSize: '10px', color: '#FF5000', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '700', textDecoration: 'underline' }}>
+                      Ganti
+                    </button>
+                    <button type="button" onClick={() => setFotoNotaTimbang('')}
+                      style={{ fontSize: '10px', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '700', textDecoration: 'underline' }}>
+                      Hapus
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => fotoInputRef.current?.click()}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  width: '100%', padding: '14px', border: '2px dashed #CBD5E1', borderRadius: '10px',
+                  background: '#F8FAFC', cursor: 'pointer', fontSize: '12px', fontWeight: '600',
+                  color: '#64748B', transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#FF5000'; e.currentTarget.style.background = '#FFF7ED'; e.currentTarget.style.color = '#FF5000'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#64748B'; }}
+              >
+                <ImageIcon size={18} /> Klik untuk upload foto nota timbang
+              </button>
+            )}
+          </div>
+
           {/* RECONCILIATION RESULT CARD */}
-          <div style={{ background: 'rgba(255, 80, 0, 0.05)', border: '1px solid rgba(255, 80, 0, 0.2)', borderRadius: '12px', padding: '12px', marginBottom: '16px' }}>
-            <div style={{ fontSize: '11px', fontWeight: '800', color: '#0F172A', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Calculator size={13} color="#FF5000" /> Rekonsiliasi & Final Profit Margin
+          <div style={{ background: 'rgba(255, 80, 0, 0.05)', border: '1px solid rgba(255, 80, 0, 0.2)', borderRadius: '12px', padding: '12px 14px', marginBottom: '16px' }}>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: '#0F172A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Calculator size={13} color="#FF5000" /> Rekonsiliasi & Profit Margin
             </div>
-            <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Susut Tonase (Sekely vs Pabrik):</span> <strong style={{ color: selisihBeratKg > 0 ? '#F59E0B' : '#10B981' }}>{selisihBeratKg.toLocaleString('id-ID')} kg ({susutTonasePercent}%)</strong>
-            </div>
-            <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', justifyContent: 'space-between', marginTop: '3px' }}>
-              <span>Selisih Kadar Air (Lab vs Sekely):</span> <strong>{selisihKadarAirPercent > 0 ? `+${selisihKadarAirPercent}` : selisihKadarAirPercent}%</strong>
-            </div>
-            <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', justifyContent: 'space-between', marginTop: '3px' }}>
-              <span>Netto Final Pabrik:</span> <strong style={{ color: '#0F172A' }}>{beratNettoFinalPabrik.toLocaleString('id-ID')} kg</strong>
-            </div>
-            <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', justifyContent: 'space-between', marginTop: '3px' }}>
-              <span>Total Penerimaan Pabrik:</span> <strong style={{ color: '#0F172A' }}>Rp {totalPenerimaanPabrik.toLocaleString('id-ID')}</strong>
-            </div>
-            <div style={{ fontSize: '12px', borderTop: '1px dashed #CBD5E1', paddingTop: '6px', marginTop: '6px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: '800', color: '#0F172A' }}>FINAL NETT PROFIT MARGIN:</span>
-              <strong style={{ color: nettProfitMargin >= 0 ? '#10B981' : '#EF4444', fontSize: '13px' }}>{nettProfitMargin >= 0 ? '+' : ''}Rp {nettProfitMargin.toLocaleString('id-ID')}</strong>
+
+            <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
+              <tbody>
+                <tr>
+                  <td style={{ color: '#64748B', padding: '3px 0', whiteSpace: 'nowrap' }}>Susut Tonase</td>
+                  <td style={{ textAlign: 'right', padding: '3px 0', fontWeight: '700', whiteSpace: 'nowrap', color: selisihBeratKg > 0 ? '#F59E0B' : '#10B981' }}>
+                    {selisihBeratKg.toLocaleString('id-ID')} kg ({susutTonasePercent}%)
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ color: '#64748B', padding: '3px 0', whiteSpace: 'nowrap' }}>Selisih Kadar Air</td>
+                  <td style={{ textAlign: 'right', padding: '3px 0', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                    {selisihKadarAirPercent > 0 ? `+${selisihKadarAirPercent}` : selisihKadarAirPercent}%
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ color: '#64748B', padding: '3px 0', whiteSpace: 'nowrap' }}>Netto Final Pabrik</td>
+                  <td style={{ textAlign: 'right', padding: '3px 0', fontWeight: '700', color: '#0F172A', whiteSpace: 'nowrap' }}>
+                    {beratNettoFinalPabrik.toLocaleString('id-ID')} kg
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ color: '#64748B', padding: '3px 0', whiteSpace: 'nowrap' }}>Total Penerimaan</td>
+                  <td style={{ textAlign: 'right', padding: '3px 0', fontWeight: '700', color: '#0F172A', whiteSpace: 'nowrap' }}>
+                    Rp {totalPenerimaanPabrik.toLocaleString('id-ID')}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style={{ borderTop: '1px dashed #CBD5E1', marginTop: '6px', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: '800', fontSize: '10px', color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Nett Profit</span>
+              <strong style={{ color: nettProfitMargin >= 0 ? '#10B981' : '#EF4444', fontSize: '14px', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                {nettProfitMargin >= 0 ? '+' : ''}Rp {nettProfitMargin.toLocaleString('id-ID')}
+              </strong>
             </div>
           </div>
 
@@ -164,6 +284,27 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
             <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Simpan Settlement</button>
           </div>
         </form>
+
+        {/* Photo Preview Modal */}
+        {previewFoto && fotoNotaTimbang && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', zIndex: 9999, padding: '20px',
+          }} onClick={() => setPreviewFoto(false)}>
+            <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '80vh' }}>
+              <img src={fotoNotaTimbang} alt="Nota Timbang Pabrik" style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '12px', objectFit: 'contain' }} />
+              <button onClick={() => setPreviewFoto(false)} style={{
+                position: 'absolute', top: '-12px', right: '-12px',
+                width: '32px', height: '32px', borderRadius: '50%',
+                background: '#EF4444', border: 'none', color: '#fff',
+                fontSize: '14px', cursor: 'pointer', display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              }}>✕</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

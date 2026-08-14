@@ -127,7 +127,19 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
                   <td style={{ fontWeight: '700' }}>{t.namaTuanToko}</td>
                   <td>{t.rincianKarung.length} koli</td>
                   <td>{t.totalGross} kg</td>
-                  <td><span className="badge badge-navy">{t.kadarAir || 6.0}%</span></td>
+                  <td>
+                    <span className="badge badge-navy" title={
+                      t.kadarAirPerKarung
+                        ? `Per karung: ${t.kadarAirPerKarung.map((ka, i) => `#${i+1}: ${ka}%`).join(', ')}`
+                        : undefined
+                    } style={{ cursor: t.kadarAirPerKarung ? 'help' : 'default' }}>
+                      {t.kadarAirPerKarung
+                        ? `${(t.kadarAirPerKarung.reduce((a, b) => a + b, 0) / t.kadarAirPerKarung.length).toFixed(1)}%`
+                        : `${t.kadarAir || 6.0}%`
+                      }
+                      {t.kadarAirPerKarung && <span style={{ fontSize: '8px', marginLeft: '2px', opacity: 0.7 }}>({t.kadarAirPerKarung.length})</span>}
+                    </span>
+                  </td>
                   <td style={{ fontWeight: '800' }}>{t.totalNetto.toLocaleString('id-ID')} kg</td>
                   <td>Rp {t.hargaBeliPerKg.toLocaleString('id-ID')}</td>
                   <td style={{ fontWeight: '700' }}>Rp {t.totalNominalBeli.toLocaleString('id-ID')}</td>

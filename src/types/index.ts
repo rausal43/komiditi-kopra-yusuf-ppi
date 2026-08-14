@@ -33,15 +33,24 @@ export interface BatchShipment {
   catatan: string;
 }
 
+export interface KarungItem {
+  berat: number;
+  kadarAir: number;
+  fotoUrl?: string;
+}
+
 export interface TimbanganKarung {
   id: string;
   tgl: string;
   namaTuanToko: string;
   rincianKarung: number[];
+  karungItems?: KarungItem[];
   totalGross: number;
   taraKarung: number;
   totalNetto: number;
   kadarAir?: number;
+  kadarAirPerKarung?: number[];
+  fotoPerKarung?: string[];
   hargaBeliPerKg: number;
   totalNominalBeli: number;
   panjarDpId?: string;
@@ -84,6 +93,7 @@ export interface PabrikSettlement {
   susutTonasePercent?: number;
   statusApproval?: string;
   lampiranNotaPabrikUrl?: string;
+  fotoNotaTimbangPabrik?: string;
 }
 
 export type SettlementPabrik = PabrikSettlement;

@@ -1,4 +1,4 @@
-import type { BatchShipment, TimbanganKarung, PanjarDP, PabrikSettlement, PriceSetting, AIWeeklyReport } from '../types';
+import type { BatchShipment, TimbanganKarung, PanjarDP, PabrikSettlement, PriceSetting, AIWeeklyReport, KarungItem } from '../types';
 
 export const initialPriceSetting: PriceSetting = {
   hargaAcuanPabrikWilmar: 14800,
@@ -91,6 +91,14 @@ export const initialTimbanganList: TimbanganKarung[] = [
     tgl: '2026-08-02',
     namaTuanToko: 'Om Hadi Tobelo',
     rincianKarung: [77, 76, 77, 72, 80],
+    karungItems: [
+      { berat: 77, kadarAir: 6.5 },
+      { berat: 76, kadarAir: 6.8 },
+      { berat: 77, kadarAir: 6.2 },
+      { berat: 72, kadarAir: 7.0 },
+      { berat: 80, kadarAir: 6.0 },
+    ],
+    kadarAirPerKarung: [6.5, 6.8, 6.2, 7.0, 6.0],
     totalGross: 382,
     taraKarung: 6,
     totalNetto: 376,
@@ -108,6 +116,15 @@ export const initialTimbanganList: TimbanganKarung[] = [
     tgl: '2026-08-04',
     namaTuanToko: 'Tuan Jabai',
     rincianKarung: [85, 84, 86, 85, 82, 84],
+    karungItems: [
+      { berat: 85, kadarAir: 7.0 },
+      { berat: 84, kadarAir: 7.2 },
+      { berat: 86, kadarAir: 6.8 },
+      { berat: 85, kadarAir: 7.1 },
+      { berat: 82, kadarAir: 7.0 },
+      { berat: 84, kadarAir: 6.9 },
+    ],
+    kadarAirPerKarung: [7.0, 7.2, 6.8, 7.1, 7.0, 6.9],
     totalGross: 506,
     taraKarung: 6,
     totalNetto: 500,

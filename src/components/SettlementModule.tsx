@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { SettlementModal } from './SettlementModal';
-import { Building2, Plus, Filter, DollarSign, Award, TrendingUp } from 'lucide-react';
+import { Building2, Plus, Filter, DollarSign, Award, TrendingUp, Paperclip } from 'lucide-react';
 
 export const SettlementModule: React.FC = () => {
   const { settlementList, batchList, addSettlement, activeModal, setActiveModal } = useApp();
@@ -98,6 +98,7 @@ export const SettlementModule: React.FC = () => {
                 <th>Harga / kg</th>
                 <th>Penerimaan Total</th>
                 <th>Nett Profit</th>
+                <th>Nota</th>
               </tr>
             </thead>
             <tbody>
@@ -113,6 +114,15 @@ export const SettlementModule: React.FC = () => {
                   <td style={{ fontWeight: '800', color: '#0F172A' }}>Rp {s.totalPenerimaanPabrik.toLocaleString('id-ID')}</td>
                   <td style={{ fontWeight: '800', color: s.nettProfitMargin >= 0 ? '#10B981' : '#EF4444' }}>
                     Rp {s.nettProfitMargin.toLocaleString('id-ID')}
+                  </td>
+                  <td>
+                    {(s.fotoNotaTimbangPabrik || s.lampiranNotaPabrikUrl) ? (
+                      <span title="Foto nota timbang tersedia" style={{ cursor: 'pointer' }}>
+                        <Paperclip size={14} color="#10B981" />
+                      </span>
+                    ) : (
+                      <span style={{ color: '#CBD5E1', fontSize: '10px' }}>-</span>
+                    )}
                   </td>
                 </tr>
               ))}
