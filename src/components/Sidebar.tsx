@@ -1,9 +1,9 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Home, ShoppingCart, Ship, Factory, PieChart, X } from 'lucide-react';
+import { Home, ShoppingCart, Ship, Factory, PieChart, X, LogOut } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, activeRole, isMobileMenuOpen, setIsMobileMenuOpen } = useApp();
+  const { activeTab, setActiveTab, activeRole, user, logout, isMobileMenuOpen, setIsMobileMenuOpen } = useApp();
 
   const handleNavClick = (tabId: string) => {
     setActiveTab(tabId);
@@ -36,7 +36,7 @@ export const Sidebar: React.FC = () => {
 
       <div className="role-active-card">
         <div className="role-active-badge">Akses {String(currentRole).toUpperCase()}</div>
-        <div className="role-menu-counter">{filteredNavItems.length} Modul Aktif Terhubung</div>
+        <div className="role-menu-counter">{user?.name || currentRole}</div>
       </div>
 
       <nav className="sidebar-nav">
@@ -59,6 +59,21 @@ export const Sidebar: React.FC = () => {
           );
         })}
       </nav>
+
+      {/* Logout button at bottom of sidebar */}
+      <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <button
+          type="button"
+          onClick={logout}
+          className="nav-item"
+          style={{ width: '100%', color: '#F87171', justifyContent: 'flex-start' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <LogOut size={18} color="#F87171" />
+            <span>Keluar / Logout</span>
+          </div>
+        </button>
+      </div>
     </aside>
   );
 };

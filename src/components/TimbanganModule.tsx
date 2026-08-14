@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TimbanganModal } from './TimbanganModal';
-import { Plus, Filter, Scale, DollarSign, Droplets, Package } from 'lucide-react';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { Plus, Filter, Scale, DollarSign, Droplets, Package, Trash2, Lock } from 'lucide-react';
 
 interface TimbanganModuleProps {
   selectedBatchId?: string;
@@ -12,8 +13,9 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
   selectedBatchId: externalBatchId,
   onBatchFilterChange,
 }) => {
-  const { timbanganList, batchList, addTimbangan, activeModal, setActiveModal } = useApp();
-  const [internalFilterBatch, setInternalFilterBatch] = React.useState('ALL');
+  const { timbanganList, batchList, addTimbangan, deleteTimbangan, canEditOrDelete, activeModal, setActiveModal } = useApp();
+  const [internalFilterBatch, setInternalFilterBatch] = useState('ALL');
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const selectedFilterBatch = externalBatchId !== undefined ? externalBatchId : internalFilterBatch;
   const isModalOpen = activeModal === 'TIMBANGAN';
@@ -117,6 +119,7 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
                 <th>Harga/kg</th>
                 <th>Nominal Beli</th>
                 <th>Panjar</th>
+                <th>Aksi / Status</th>
               </tr>
             </thead>
             <tbody>
@@ -150,12 +153,44 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
                       <span className="badge badge-navy">-</span>
                     )}
                   </td>
+                  <td>
+                    {canEditOrDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTargetId(t.id)}
+                        style={{
+                          background: '#FEF2F2', border: 'none', borderRadius: '6px',
+                          padding: '4px 8px', color: '#EF4444', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
+                        }}
+                        title="Hapus Transaksi (Khusus Owner)"
+                      >
+                        <Trash2 size={12} /> Hapus
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: '10px', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }} title="Tersimpan - Tidak dapat diubah oleh Logistik">
+                        <Lock size={11} color="#64748B" /> Tersimpan
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {deleteTargetId && (
+        <ConfirmDeleteModal
+          title="Hapus Data Timbangan"
+          itemName={`Timbangan ${timbanganList.find(t => t.id === deleteTargetId)?.namaTuanToko || deleteTargetId}`}
+          onConfirm={() => {
+            deleteTimbangan(deleteTargetId);
+            setDeleteTargetId(null);
+          }}
+          onClose={() => setDeleteTargetId(null)}
+        />
+      )}
 
       {isModalOpen && (
         <TimbanganModal

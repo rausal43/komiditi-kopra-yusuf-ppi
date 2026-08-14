@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { SettlementModal } from './SettlementModal';
-import { Building2, Plus, Filter, DollarSign, Award, TrendingUp, Paperclip } from 'lucide-react';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { Building2, Plus, Filter, DollarSign, Award, TrendingUp, Paperclip, Trash2, Lock } from 'lucide-react';
 
 export const SettlementModule: React.FC = () => {
-  const { settlementList, batchList, addSettlement, activeModal, setActiveModal } = useApp();
+  const { settlementList, batchList, addSettlement, deleteSettlement, canEditOrDelete, activeModal, setActiveModal } = useApp();
   const [selectedFilterBatch, setSelectedFilterBatch] = useState('ALL');
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const isModalOpen = activeModal === 'SETTLEMENT';
 
@@ -99,6 +101,7 @@ export const SettlementModule: React.FC = () => {
                 <th>Penerimaan Total</th>
                 <th>Nett Profit</th>
                 <th>Nota</th>
+                <th>Aksi / Status</th>
               </tr>
             </thead>
             <tbody>
@@ -124,12 +127,44 @@ export const SettlementModule: React.FC = () => {
                       <span style={{ color: '#CBD5E1', fontSize: '10px' }}>-</span>
                     )}
                   </td>
+                  <td>
+                    {canEditOrDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTargetId(s.id)}
+                        style={{
+                          background: '#FEF2F2', border: 'none', borderRadius: '6px',
+                          padding: '4px 8px', color: '#EF4444', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
+                        }}
+                        title="Hapus Settlement (Khusus Owner)"
+                      >
+                        <Trash2 size={12} /> Hapus
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: '10px', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }} title="Tersimpan - Tidak dapat diubah oleh Logistik">
+                        <Lock size={11} color="#64748B" /> Tersimpan
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {deleteTargetId && (
+        <ConfirmDeleteModal
+          title="Hapus Settlement Pabrik"
+          itemName={`Settlement ${deleteTargetId}`}
+          onConfirm={() => {
+            deleteSettlement(deleteTargetId);
+            setDeleteTargetId(null);
+          }}
+          onClose={() => setDeleteTargetId(null)}
+        />
+      )}
 
       {isModalOpen && (
         <SettlementModal

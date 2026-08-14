@@ -8,9 +8,14 @@ import { BelanjaModule } from './components/BelanjaModule';
 import { TransshipmentModule } from './components/TransshipmentModule';
 import { SettlementModule } from './components/SettlementModule';
 import { OverviewModule } from './components/OverviewModule';
+import { LoginScreen } from './components/LoginScreen';
 
 const MainContent: React.FC = () => {
-  const { activeTab } = useApp();
+  const { user, activeTab } = useApp();
+
+  if (!user) {
+    return <LoginScreen />;
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {

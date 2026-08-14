@@ -11,7 +11,7 @@ export const BatchSettingModule: React.FC = () => {
     batchList, timbanganList, addBatch, activeModal, setActiveModal,
     daftarAkunOwner, addAkunOwner, deleteAkunOwner,
     daftarKapal, addKapal, deleteKapal,
-    daftarGudang, addGudang, deleteGudang
+    daftarGudang, addGudang, deleteGudang, canEditOrDelete
   } = useApp();
 
   const [selectedBatchId, setSelectedBatchId] = useState(batchList[0]?.id || '');
@@ -33,7 +33,7 @@ export const BatchSettingModule: React.FC = () => {
   const tonasePercent = Math.min(100, Math.round((tonaseTerkumpulKg / (activeBatch?.targetTonase || 10500)) * 100));
 
   const handleConfirmDelete = () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || !canEditOrDelete) return;
     if (deleteTarget.type === 'rekening') deleteAkunOwner(deleteTarget.name);
     else if (deleteTarget.type === 'kapal') deleteKapal(deleteTarget.name);
     else if (deleteTarget.type === 'gudang') deleteGudang(deleteTarget.name);
@@ -93,8 +93,6 @@ export const BatchSettingModule: React.FC = () => {
                 <span className="ring-text" style={{ color: '#0F172A' }}>{modalTerpakaiPercent}%</span>
               </div>
             </div>
-
-            {/* Clean Mobile-Responsive Layout Fix for Beli & Account Badge */}
             <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
               <span style={{ fontSize: '10px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                 <PieChart size={12} color="#10B981" /> Beli: <strong style={{ color: '#0F172A', whiteSpace: 'nowrap' }}>Rp {totalBeliBatch.toLocaleString('id-ID')}</strong>
@@ -119,7 +117,9 @@ export const BatchSettingModule: React.FC = () => {
             {daftarAkunOwner.map(a => (
               <span key={a} className="badge badge-navy" style={{ padding: '3px 8px', fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 <span>{a}</span>
-                <X size={11} style={{ cursor: 'pointer' }} onClick={() => setDeleteTarget({ type: 'rekening', name: a })} />
+                {canEditOrDelete && (
+                  <X size={11} style={{ cursor: 'pointer' }} onClick={() => setDeleteTarget({ type: 'rekening', name: a })} />
+                )}
               </span>
             ))}
           </div>
@@ -139,7 +139,9 @@ export const BatchSettingModule: React.FC = () => {
             {daftarKapal.map(k => (
               <span key={k} className="badge badge-orange" style={{ padding: '3px 8px', fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 <span>{k}</span>
-                <X size={11} style={{ cursor: 'pointer' }} onClick={() => setDeleteTarget({ type: 'kapal', name: k })} />
+                {canEditOrDelete && (
+                  <X size={11} style={{ cursor: 'pointer' }} onClick={() => setDeleteTarget({ type: 'kapal', name: k })} />
+                )}
               </span>
             ))}
           </div>
@@ -152,14 +154,16 @@ export const BatchSettingModule: React.FC = () => {
         <div className="card">
           <div className="card-title" style={{ marginBottom: '8px' }}>
             <span style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '800' }}>
-              <Warehouse size={13} color="#0EA5E9" /> Master Nama Gudang
+              <Warehouse size={13} color="#0EA5E9" /> Master Lokasi Gudang
             </span>
           </div>
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
             {daftarGudang.map(g => (
               <span key={g} className="badge badge-navy" style={{ padding: '3px 8px', fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 <span>{g}</span>
-                <X size={11} style={{ cursor: 'pointer' }} onClick={() => setDeleteTarget({ type: 'gudang', name: g })} />
+                {canEditOrDelete && (
+                  <X size={11} style={{ cursor: 'pointer' }} onClick={() => setDeleteTarget({ type: 'gudang', name: g })} />
+                )}
               </span>
             ))}
           </div>

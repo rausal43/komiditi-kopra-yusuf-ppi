@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { PanjarModal } from './PanjarModal';
-import { Plus, Search, Filter } from 'lucide-react';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { Plus, Search, Filter, Trash2, Lock } from 'lucide-react';
 
 interface PanjarModuleProps {
   selectedBatchId?: string;
@@ -12,9 +13,10 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
   selectedBatchId: externalBatchId,
   onBatchFilterChange,
 }) => {
-  const { panjarList, batchList, addPanjar, activeModal, setActiveModal } = useApp();
+  const { panjarList, batchList, addPanjar, deletePanjar, canEditOrDelete, activeModal, setActiveModal } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [internalFilterBatch, setInternalFilterBatch] = useState('ALL');
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const selectedFilterBatch = externalBatchId !== undefined ? externalBatchId : internalFilterBatch;
   const isModalOpen = activeModal === 'PANJAR';
@@ -89,6 +91,7 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
                 <th>Nominal DP</th>
                 <th>Metode Bayar</th>
                 <th>Status Pemotongan</th>
+                <th>Aksi / Status</th>
               </tr>
             </thead>
             <tbody>
@@ -109,12 +112,44 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
                       <span className="badge badge-navy">Belum Lunas</span>
                     )}
                   </td>
+                  <td>
+                    {canEditOrDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTargetId(p.id)}
+                        style={{
+                          background: '#FEF2F2', border: 'none', borderRadius: '6px',
+                          padding: '4px 8px', color: '#EF4444', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
+                        }}
+                        title="Hapus Panjar DP (Khusus Owner)"
+                      >
+                        <Trash2 size={12} /> Hapus
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: '10px', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }} title="Tersimpan - Tidak dapat diubah oleh Logistik">
+                        <Lock size={11} color="#64748B" /> Tersimpan
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {deleteTargetId && (
+        <ConfirmDeleteModal
+          title="Hapus Data Panjar DP"
+          itemName={`Panjar ${panjarList.find(p => p.id === deleteTargetId)?.noKwitansi || deleteTargetId}`}
+          onConfirm={() => {
+            deletePanjar(deleteTargetId);
+            setDeleteTargetId(null);
+          }}
+          onClose={() => setDeleteTargetId(null)}
+        />
+      )}
 
       {isModalOpen && (
         <PanjarModal

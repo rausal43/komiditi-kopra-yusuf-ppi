@@ -77,6 +77,43 @@ export const dbService = {
     }
   },
 
+  // Delete functions (Owner only)
+  async deleteTimbangan(id: string) {
+    try {
+      const { error } = await supabase.from('timbangan').delete().eq('id', id);
+      if (error) console.error('Error deleting timbangan:', error);
+    } catch (err) {
+      console.error('Supabase timbangan delete error:', err);
+    }
+  },
+
+  async deletePanjar(id: string) {
+    try {
+      const { error } = await supabase.from('panjar').delete().eq('id', id);
+      if (error) console.error('Error deleting panjar:', error);
+    } catch (err) {
+      console.error('Supabase panjar delete error:', err);
+    }
+  },
+
+  async deleteBatch(id: string) {
+    try {
+      const { error } = await supabase.from('batches').delete().eq('id', id);
+      if (error) console.error('Error deleting batch:', error);
+    } catch (err) {
+      console.error('Supabase batch delete error:', err);
+    }
+  },
+
+  async deleteSettlement(id: string) {
+    try {
+      const { error } = await supabase.from('settlements').delete().eq('id', id);
+      if (error) console.error('Error deleting settlement:', error);
+    } catch (err) {
+      console.error('Supabase settlement delete error:', err);
+    }
+  },
+
   // Update Price Setting
   async updatePriceSetting(setting: Partial<MasterPriceSetting>) {
     try {

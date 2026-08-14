@@ -5,7 +5,18 @@ import { dbService } from '../lib/dbService';
 
 export type ActiveModalType = 'NONE' | 'BATCH' | 'TIMBANGAN' | 'PANJAR' | 'SETTLEMENT' | 'TRANSSHIPMENT';
 
+export interface UserSession {
+  username: string;
+  name: string;
+  role: Role;
+}
+
 interface AppContextType {
+  user: UserSession | null;
+  login: (role: Role, username?: string, name?: string) => void;
+  logout: () => void;
+  canEditOrDelete: boolean;
+
   activeRole: Role;
   setActiveRole: (role: Role) => void;
   activeTab: string;
@@ -37,10 +48,18 @@ interface AppContextType {
   deleteGudang: (nama: string) => void;
 
   addPanjar: (panjar: Omit<PanjarDP, 'id'>) => void;
+  deletePanjar: (id: string) => void;
+
   addTimbangan: (timbangan: Omit<TimbanganKarung, 'id'>) => void;
+  deleteTimbangan: (id: string) => void;
+
   addBatch: (batch: Omit<BatchShipment, 'id'>) => void;
+  deleteBatch: (id: string) => void;
   updateBatchMilestone: (id: string, status: BatchShipment['statusMilestone'], lokasi: string) => void;
+
   addSettlement: (settlement: Omit<SettlementPabrik, 'id'>) => void;
+  deleteSettlement: (id: string) => void;
+
   updatePriceSetting: (setting: Partial<MasterPriceSetting>) => void;
   generateAIReport: () => void;
 }
@@ -48,8 +67,21 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeRole, setActiveRole] = useState<Role>('OWNER');
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [user, setUser] = useState<UserSession | null>(() => {
+    const saved = localStorage.getItem('ks_user_session');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return null;
+      }
+    }
+    // Default logged in as OWNER for initial access if no session
+    return { username: 'owner', name: 'Pak Owner', role: 'OWNER' };
+  });
+
+  const [activeRole, setActiveRoleState] = useState<Role>(user?.role || 'OWNER');
+  const [activeTab, setActiveTab] = useState<string>('batch');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   
   const [activeModal, setActiveModal] = useState<ActiveModalType>('NONE');
@@ -65,6 +97,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [daftarAkunOwner, setDaftarAkunOwner] = useState<string[]>(initialPriceSetting.daftarAkunOwner);
   const [daftarKapal, setDaftarKapal] = useState<string[]>(['KM Sabuk Nusantara', 'Kapal Feeder Sekely', 'KM Lintas Maluku']);
   const [daftarGudang, setDaftarGudang] = useState<string[]>(['Gudang Utama Sekely', 'Gudang Halmahera Barat']);
+
+  const canEditOrDelete = activeRole === 'OWNER' || activeRole === 'owner';
+
+  const setActiveRole = (role: Role) => {
+    setActiveRoleState(role);
+    if (user) {
+      const updated = { ...user, role };
+      setUser(updated);
+      localStorage.setItem('ks_user_session', JSON.stringify(updated));
+    }
+  };
+
+  const login = (role: Role, username?: string, name?: string) => {
+    const roleUpper = role.toUpperCase() as Role;
+    const defaultNames: Record<string, string> = {
+      OWNER: 'Pak Owner',
+      LOGISTIK: 'Tim Logistik',
+      SEKELY: 'Petugas Gudang Sekely',
+    };
+    const session: UserSession = {
+      username: username || role.toLowerCase(),
+      name: name || defaultNames[roleUpper] || roleUpper,
+      role: roleUpper,
+    };
+    setUser(session);
+    setActiveRoleState(roleUpper);
+    localStorage.setItem('ks_user_session', JSON.stringify(session));
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('ks_user_session');
+  };
 
   // Fetch data from Supabase DB on mount if tables exist
   useEffect(() => {
@@ -88,6 +153,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteAkunOwner = (nama: string) => {
+    if (!canEditOrDelete) return;
     setDaftarAkunOwner(prev => prev.filter(a => a !== nama));
   };
 
@@ -98,6 +164,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteKapal = (nama: string) => {
+    if (!canEditOrDelete) return;
     setDaftarKapal(prev => prev.filter(k => k !== nama));
   };
 
@@ -108,6 +175,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteGudang = (nama: string) => {
+    if (!canEditOrDelete) return;
     setDaftarGudang(prev => prev.filter(g => g !== nama));
   };
 
@@ -130,6 +198,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     dbService.insertPanjar(fullPanjar);
   };
 
+  const deletePanjar = (id: string) => {
+    if (!canEditOrDelete) return;
+    setPanjarList(prev => prev.filter(p => p.id !== id));
+    dbService.deletePanjar(id);
+  };
+
   const addTimbangan = (newTimbangan: Omit<TimbanganKarung, 'id'>) => {
     const id = `t-${Date.now()}`;
     const fullTimbangan = { ...newTimbangan, id };
@@ -137,11 +211,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     dbService.insertTimbangan(fullTimbangan);
   };
 
+  const deleteTimbangan = (id: string) => {
+    if (!canEditOrDelete) return;
+    setTimbanganList(prev => prev.filter(t => t.id !== id));
+    dbService.deleteTimbangan(id);
+  };
+
   const addBatch = (newBatch: Omit<BatchShipment, 'id'>) => {
     const id = `BATCH-2026-${String(batchList.length + 1).padStart(2, '0')}C`;
     const fullBatch = { ...newBatch, id };
     setBatchList(prev => [fullBatch, ...prev]);
     dbService.insertBatch(fullBatch);
+  };
+
+  const deleteBatch = (id: string) => {
+    if (!canEditOrDelete) return;
+    setBatchList(prev => prev.filter(b => b.id !== id));
+    dbService.deleteBatch(id);
   };
 
   const updateBatchMilestone = (id: string, status: BatchShipment['statusMilestone'], lokasi: string) => {
@@ -164,6 +250,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     dbService.updateBatchMilestone(newSettlement.batchId, 'Selesai Pabrik', 'Pabrik Bitung (Settlement Selesai)');
   };
 
+  const deleteSettlement = (id: string) => {
+    if (!canEditOrDelete) return;
+    setSettlementList(prev => prev.filter(s => s.id !== id));
+    dbService.deleteSettlement(id);
+  };
+
   const updatePriceSetting = (setting: Partial<MasterPriceSetting>) => {
     setPriceSetting(prev => ({ ...prev, ...setting }));
     dbService.updatePriceSetting(setting);
@@ -184,11 +276,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        user, login, logout, canEditOrDelete,
         activeRole, setActiveRole, activeTab, setActiveTab, isMobileMenuOpen, setIsMobileMenuOpen,
         activeModal, setActiveModal, belanjaSubTab, setBelanjaSubTab, openContextualFabModal,
         panjarList, timbanganList, batchList, settlementList, priceSetting, aiReports,
         daftarAkunOwner, daftarKapal, daftarGudang, addAkunOwner, deleteAkunOwner, addKapal, deleteKapal, addGudang, deleteGudang,
-        addPanjar, addTimbangan, addBatch, updateBatchMilestone, addSettlement, updatePriceSetting, generateAIReport,
+        addPanjar, deletePanjar, addTimbangan, deleteTimbangan, addBatch, deleteBatch, updateBatchMilestone, addSettlement, deleteSettlement, updatePriceSetting, generateAIReport,
       }}
     >
       {children}
