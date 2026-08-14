@@ -122,10 +122,21 @@ ALTER TABLE public.settlements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
--- Allow Public (Anon) Read & Write Policies
+-- Allow Public (Anon) Read & Write Policies (Drop first if exists to prevent error 42710)
+DROP POLICY IF EXISTS "Allow public read/write batches" ON public.batches;
 CREATE POLICY "Allow public read/write batches" ON public.batches FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public read/write panjar" ON public.panjar;
 CREATE POLICY "Allow public read/write panjar" ON public.panjar FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public read/write timbangan" ON public.timbangan;
 CREATE POLICY "Allow public read/write timbangan" ON public.timbangan FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public read/write settlements" ON public.settlements;
 CREATE POLICY "Allow public read/write settlements" ON public.settlements FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public read/write price_settings" ON public.price_settings;
 CREATE POLICY "Allow public read/write price_settings" ON public.price_settings FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public read/write users" ON public.users;
 CREATE POLICY "Allow public read/write users" ON public.users FOR ALL USING (true) WITH CHECK (true);
