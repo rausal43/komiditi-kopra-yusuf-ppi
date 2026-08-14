@@ -2,6 +2,41 @@ import { supabase } from './supabase';
 import type { BatchShipment, TimbanganKarung, PanjarDP, PabrikSettlement, MasterPriceSetting } from '../types';
 
 export const dbService = {
+  // Authenticate user against Supabase users table
+  async authenticateUser(usernameInput: string, passwordInput: string) {
+    const cleanUsername = usernameInput.trim().toLowerCase();
+    const cleanPassword = passwordInput.trim();
+
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', cleanUsername)
+        .eq('password', cleanPassword)
+        .single();
+
+      if (data && !error) {
+        return {
+          username: data.username,
+          name: data.name,
+          role: data.role as 'OWNER' | 'LOGISTIK' | 'SEKELY',
+        };
+      }
+    } catch (err) {
+      console.warn('Supabase user auth query notice:', err);
+    }
+
+    // Local fallback accounts if table not yet created in Supabase
+    if (cleanUsername === 'owneryusufdz' && cleanPassword === 'komoditi1523') {
+      return { username: 'owneryusufdz', name: 'Yusuf (Owner)', role: 'OWNER' as const };
+    }
+    if (cleanUsername === 'logisticteam' && cleanPassword === 'komoditi1523') {
+      return { username: 'logisticteam', name: 'Tim Logistik', role: 'LOGISTIK' as const };
+    }
+
+    return null;
+  },
+
   // Fetch all initial data from Supabase
   async fetchAllData() {
     try {

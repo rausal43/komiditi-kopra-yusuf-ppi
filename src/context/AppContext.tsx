@@ -14,6 +14,7 @@ export interface UserSession {
 interface AppContextType {
   user: UserSession | null;
   login: (role: Role, username?: string, name?: string) => void;
+  loginWithCredentials: (usernameInput: string, passwordInput: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   canEditOrDelete: boolean;
 
@@ -76,13 +77,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return null;
       }
     }
-    // Default logged in as OWNER for initial access if no session
-    return { username: 'owner', name: 'Pak Owner', role: 'OWNER' };
+    return null;
   });
 
-  const [activeRole, setActiveRoleState] = useState<Role>(user?.role || 'OWNER');
+  const [activeRole, setActiveRoleState] = useState<Role>(user?.role || 'LOGISTIK');
   const [activeTab, setActiveTab] = useState<string>('batch');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+  const loginWithCredentials = async (usernameInput: string, passwordInput: string) => {
+    const authenticatedUser = await dbService.authenticateUser(usernameInput, passwordInput);
+    if (authenticatedUser) {
+      setUser(authenticatedUser);
+      setActiveRoleState(authenticatedUser.role);
+      localStorage.setItem('ks_user_session', JSON.stringify(authenticatedUser));
+      return { success: true };
+    }
+    return { success: false, message: 'Username atau password tidak ditemukan!' };
+  };
   
   const [activeModal, setActiveModal] = useState<ActiveModalType>('NONE');
   const [belanjaSubTab, setBelanjaSubTab] = useState<'timbangan' | 'panjar'>('timbangan');
@@ -276,7 +287,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
-        user, login, logout, canEditOrDelete,
+        user, login, loginWithCredentials, logout, canEditOrDelete,
         activeRole, setActiveRole, activeTab, setActiveTab, isMobileMenuOpen, setIsMobileMenuOpen,
         activeModal, setActiveModal, belanjaSubTab, setBelanjaSubTab, openContextualFabModal,
         panjarList, timbanganList, batchList, settlementList, priceSetting, aiReports,

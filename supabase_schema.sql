@@ -96,12 +96,31 @@ CREATE TABLE IF NOT EXISTS public.price_settings (
   "daftarAkunOwner" JSONB DEFAULT '[]'::jsonb
 );
 
+-- 6. Table: Users Authentication
+CREATE TABLE IF NOT EXISTS public.users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Seed Default Users
+INSERT INTO public.users (username, password, name, role)
+VALUES
+  ('owneryusufdz', 'komoditi1523', 'Yusuf (Owner)', 'OWNER'),
+  ('logisticteam', 'komoditi1523', 'Tim Logistik', 'LOGISTIK')
+ON CONFLICT (username) DO UPDATE
+SET password = EXCLUDED.password, name = EXCLUDED.name, role = EXCLUDED.role;
+
 -- Enable RLS (Row Level Security) or Allow Anon Access
 ALTER TABLE public.batches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.panjar ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.timbangan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settlements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
 -- Allow Public (Anon) Read & Write Policies
 CREATE POLICY "Allow public read/write batches" ON public.batches FOR ALL USING (true) WITH CHECK (true);
@@ -109,3 +128,4 @@ CREATE POLICY "Allow public read/write panjar" ON public.panjar FOR ALL USING (t
 CREATE POLICY "Allow public read/write timbangan" ON public.timbangan FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public read/write settlements" ON public.settlements FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public read/write price_settings" ON public.price_settings FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public read/write users" ON public.users FOR ALL USING (true) WITH CHECK (true);

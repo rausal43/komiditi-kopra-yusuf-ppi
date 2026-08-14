@@ -1,21 +1,36 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ShieldCheck, Truck, Warehouse, Lock, ArrowRight } from 'lucide-react';
-import type { Role } from '../types';
+import { ShieldCheck, Truck, Lock, ArrowRight, AlertCircle, KeyRound } from 'lucide-react';
 
 export const LoginScreen: React.FC = () => {
-  const { login } = useApp();
-  const [selectedRole, setSelectedRole] = useState<Role>('LOGISTIK');
+  const { loginWithCredentials } = useApp();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(selectedRole, username || selectedRole.toLowerCase());
+    if (!username.trim() || !password.trim()) {
+      setErrorMsg('Harap isi username dan password!');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg(null);
+
+    const result = await loginWithCredentials(username, password);
+    setIsLoading(false);
+
+    if (!result.success) {
+      setErrorMsg(result.message || 'Username atau password salah! Periksa data akun Supabase.');
+    }
   };
 
-  const handleQuickLogin = (role: Role) => {
-    login(role);
+  const setPresetCredentials = (user: string, pass: string) => {
+    setUsername(user);
+    setPassword(pass);
+    setErrorMsg(null);
   };
 
   return (
@@ -67,110 +82,84 @@ export const LoginScreen: React.FC = () => {
             KOPRA SEJATI
           </h1>
           <p style={{ fontSize: '12px', color: '#64748B', marginTop: '4px', margin: 0 }}>
-            Sistem Sourcing & Rekonsiliasi Real-Time
+            Login Otentikasi Supabase Real-Time
           </p>
         </div>
 
-        {/* Quick Role Selection Cards */}
+        {/* Preset Account Quick Picker */}
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
-            Pilih Peran / Hak Akses
+          <label style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+            <KeyRound size={12} color="#FF5000" /> Pilih Akun Akses Supabase:
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <button
               type="button"
-              onClick={() => setSelectedRole('LOGISTIK')}
+              onClick={() => setPresetCredentials('owneryusufdz', 'komoditi1523')}
               style={{
-                padding: '10px 6px',
+                padding: '10px 12px',
                 borderRadius: '12px',
-                border: selectedRole === 'LOGISTIK' ? '2px solid #FF5000' : '1px solid #E2E8F0',
-                background: selectedRole === 'LOGISTIK' ? 'rgba(255, 80, 0, 0.06)' : '#FAFBFC',
+                border: username === 'owneryusufdz' ? '2px solid #10B981' : '1px solid #E2E8F0',
+                background: username === 'owneryusufdz' ? 'rgba(16, 185, 129, 0.08)' : '#FAFBFC',
                 cursor: 'pointer',
-                textAlign: 'center',
+                textAlign: 'left',
                 transition: 'all 0.2s',
               }}
             >
-              <Truck size={18} color={selectedRole === 'LOGISTIK' ? '#FF5000' : '#64748B'} style={{ margin: '0 auto 4px' }} />
-              <div style={{ fontSize: '11px', fontWeight: '800', color: selectedRole === 'LOGISTIK' ? '#FF5000' : '#0F172A' }}>Logistik</div>
-              <div style={{ fontSize: '9px', color: '#64748B' }}>Input & Save</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                <ShieldCheck size={16} color="#10B981" />
+                <span style={{ fontSize: '12px', fontWeight: '800', color: '#0F172A' }}>OWNER</span>
+              </div>
+              <div style={{ fontSize: '10px', color: '#64748B' }}>owneryusufdz</div>
+              <div style={{ fontSize: '9px', color: '#10B981', fontWeight: '600' }}>Full Control (Edit/Hapus)</div>
             </button>
 
             <button
               type="button"
-              onClick={() => setSelectedRole('OWNER')}
+              onClick={() => setPresetCredentials('logisticteam', 'komoditi1523')}
               style={{
-                padding: '10px 6px',
+                padding: '10px 12px',
                 borderRadius: '12px',
-                border: selectedRole === 'OWNER' ? '2px solid #FF5000' : '1px solid #E2E8F0',
-                background: selectedRole === 'OWNER' ? 'rgba(255, 80, 0, 0.06)' : '#FAFBFC',
+                border: username === 'logisticteam' ? '2px solid #FF5000' : '1px solid #E2E8F0',
+                background: username === 'logisticteam' ? 'rgba(255, 80, 0, 0.08)' : '#FAFBFC',
                 cursor: 'pointer',
-                textAlign: 'center',
+                textAlign: 'left',
                 transition: 'all 0.2s',
               }}
             >
-              <ShieldCheck size={18} color={selectedRole === 'OWNER' ? '#FF5000' : '#64748B'} style={{ margin: '0 auto 4px' }} />
-              <div style={{ fontSize: '11px', fontWeight: '800', color: selectedRole === 'OWNER' ? '#FF5000' : '#0F172A' }}>Owner</div>
-              <div style={{ fontSize: '9px', color: '#64748B' }}>Full Akses</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedRole('SEKELY')}
-              style={{
-                padding: '10px 6px',
-                borderRadius: '12px',
-                border: selectedRole === 'SEKELY' ? '2px solid #FF5000' : '1px solid #E2E8F0',
-                background: selectedRole === 'SEKELY' ? 'rgba(255, 80, 0, 0.06)' : '#FAFBFC',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'all 0.2s',
-              }}
-            >
-              <Warehouse size={18} color={selectedRole === 'SEKELY' ? '#FF5000' : '#64748B'} style={{ margin: '0 auto 4px' }} />
-              <div style={{ fontSize: '11px', fontWeight: '800', color: selectedRole === 'SEKELY' ? '#FF5000' : '#0F172A' }}>Sekely</div>
-              <div style={{ fontSize: '9px', color: '#64748B' }}>Gudang</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                <Truck size={16} color="#FF5000" />
+                <span style={{ fontSize: '12px', fontWeight: '800', color: '#0F172A' }}>LOGISTIK</span>
+              </div>
+              <div style={{ fontSize: '10px', color: '#64748B' }}>logisticteam</div>
+              <div style={{ fontSize: '9px', color: '#FF5000', fontWeight: '600' }}>Input & Save Only</div>
             </button>
           </div>
         </div>
 
-        {/* Role Privileges Notice */}
-        <div style={{
-          background: selectedRole === 'LOGISTIK' ? '#EFF6FF' : selectedRole === 'OWNER' ? '#ECFDF5' : '#F8FAFC',
-          border: `1px solid ${selectedRole === 'LOGISTIK' ? '#BFDBFE' : selectedRole === 'OWNER' ? '#A7F3D0' : '#E2E8F0'}`,
-          borderRadius: '10px',
-          padding: '10px 12px',
-          marginBottom: '20px',
-          fontSize: '11px',
-          color: '#334155',
-        }}>
-          {selectedRole === 'LOGISTIK' && (
-            <div>
-              <strong>🚚 Hak Akses Logistik:</strong> Buka Beranda, Belanja Kopra, Pengiriman, & Setor Pabrik. Bisa input & simpan data baru, tetapi <u>tidak bisa edit/hapus</u> setelah disimpan.
-            </div>
-          )}
-          {selectedRole === 'OWNER' && (
-            <div>
-              <strong>🛡️ Hak Akses Owner:</strong> Memiliki wewenang penuh (Full Access). Bisa input, edit, hapus data, serta mengatur harga & modul finansial.
-            </div>
-          )}
-          {selectedRole === 'SEKELY' && (
-            <div>
-              <strong>🏭 Hak Akses Sekely:</strong> Membuka modul operasional gudang dan belanja kopra lapangan.
-            </div>
-          )}
-        </div>
+        {/* Error Notification Banner */}
+        {errorMsg && (
+          <div style={{
+            background: '#FEF2F2', border: '1px solid #FCA5A5',
+            borderRadius: '10px', padding: '10px 12px', marginBottom: '16px',
+            fontSize: '11px', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px',
+          }}>
+            <AlertCircle size={16} color="#EF4444" style={{ flexShrink: 0 }} />
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
         {/* Form Input Credentials */}
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: '14px' }}>
-            <label className="form-label" style={{ fontSize: '11px' }}>Username / ID</label>
+            <label className="form-label" style={{ fontSize: '11px' }}>Username / Akun</label>
             <input
               type="text"
               className="form-input"
-              placeholder={`Masukkan username (opsional, default: ${selectedRole.toLowerCase()})`}
+              placeholder="Contoh: owneryusufdz atau logisticteam"
               value={username}
               onChange={e => setUsername(e.target.value)}
               style={{ fontSize: '13px' }}
+              required
             />
           </div>
 
@@ -180,10 +169,11 @@ export const LoginScreen: React.FC = () => {
               <input
                 type="password"
                 className="form-input"
-                placeholder="••••••••"
+                placeholder="Masukkan password (komoditi1523)"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 style={{ fontSize: '13px' }}
+                required
               />
               <Lock size={14} color="#94A3B8" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             </div>
@@ -192,6 +182,7 @@ export const LoginScreen: React.FC = () => {
           <button
             type="submit"
             className="btn btn-primary"
+            disabled={isLoading}
             style={{
               width: '100%',
               padding: '12px',
@@ -202,30 +193,15 @@ export const LoginScreen: React.FC = () => {
               justifyContent: 'center',
               gap: '8px',
               borderRadius: '12px',
+              opacity: isLoading ? 0.7 : 1,
             }}
           >
-            Masuk Sebagai {selectedRole} <ArrowRight size={16} />
+            {isLoading ? 'Memverifikasi...' : 'Masuk Aplikasi'} <ArrowRight size={16} />
           </button>
         </form>
 
-        {/* Quick Instant Login Option */}
-        <div style={{ marginTop: '16px', textAlign: 'center', borderTop: '1px solid #F1F5F9', paddingTop: '14px' }}>
-          <span style={{ fontSize: '11px', color: '#94A3B8' }}>Atau Masuk Cepat: </span>
-          <button
-            type="button"
-            onClick={() => handleQuickLogin('LOGISTIK')}
-            style={{ fontSize: '11px', fontWeight: '800', color: '#FF5000', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', marginLeft: '4px' }}
-          >
-            Masuk Logistik
-          </button>
-          <span style={{ fontSize: '11px', color: '#94A3B8' }}> | </span>
-          <button
-            type="button"
-            onClick={() => handleQuickLogin('OWNER')}
-            style={{ fontSize: '11px', fontWeight: '800', color: '#10B981', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-          >
-            Masuk Owner
-          </button>
+        <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '10px', color: '#94A3B8' }}>
+          🛡️ Terkoneksi secara aman dengan Database Supabase & Cloudflare R2
         </div>
       </div>
     </div>
