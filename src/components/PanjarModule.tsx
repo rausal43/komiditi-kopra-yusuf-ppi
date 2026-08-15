@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { PanjarModal } from './PanjarModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
-import { Plus, Search, Filter, Trash2, Lock } from 'lucide-react';
+import { ImagePreviewModal } from './ImagePreviewModal';
+import { PaginationControl } from './PaginationControl';
+import { BatchFilterSelect } from './common/BatchFilterSelect';
+import { Plus, Search, Trash2, Lock, Paperclip } from 'lucide-react';
 
 interface PanjarModuleProps {
   selectedBatchId?: string;
@@ -17,6 +20,8 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [internalFilterBatch, setInternalFilterBatch] = useState('ALL');
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [displayLimit, setDisplayLimit] = useState<number>(5);
 
   const selectedFilterBatch = externalBatchId !== undefined ? externalBatchId : internalFilterBatch;
   const isModalOpen = activeModal === 'PANJAR';
@@ -29,34 +34,26 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
     }
   };
 
-  const filteredPanjar = panjarList.filter(p => {
-    const matchesSearch =
-      p.namaPenerima.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.noKwitansi.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBatch = selectedFilterBatch === 'ALL' || p.batchId === selectedFilterBatch;
-    return matchesSearch && matchesBatch;
-  });
+  const filteredPanjar = panjarList
+    .filter(p => {
+      const matchesSearch =
+        p.namaPenerima.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.noKwitansi.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesBatch = selectedFilterBatch === 'ALL' || p.batchId === selectedFilterBatch;
+      return matchesSearch && matchesBatch;
+    })
+    .sort((a, b) => (b.id || '').localeCompare(a.id || ''));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Action & Filter Toolbar */}
       <div className="card" style={{ padding: '12px 18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Filter size={14} color="#FF5000" />
-            <span style={{ fontSize: '11px', fontWeight: '700', color: '#0F172A' }}>Filter Batch:</span>
-            <select
-              className="form-select"
-              style={{ width: '160px', padding: '6px 10px', fontSize: '11px' }}
-              value={selectedFilterBatch}
-              onChange={e => handleFilterChange(e.target.value)}
-            >
-              <option value="ALL">Semua Batch</option>
-              {batchList.map(b => (
-                <option key={b.id} value={b.id}>{b.id}</option>
-              ))}
-            </select>
-          </div>
+          <BatchFilterSelect
+            batchList={batchList}
+            selectedBatchId={selectedFilterBatch}
+            onChange={handleFilterChange}
+          />
 
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <div style={{ position: 'relative' }}>
@@ -91,11 +88,12 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
                 <th>Nominal DP</th>
                 <th>Metode Bayar</th>
                 <th>Status Pemotongan</th>
+                <th>Kwitansi</th>
                 <th>Aksi / Status</th>
               </tr>
             </thead>
             <tbody>
-              {filteredPanjar.map(p => (
+              {filteredPanjar.slice(0, displayLimit).map(p => (
                 <tr key={p.id}>
                   <td style={{ fontWeight: '800', color: '#FF5000' }}>{p.batchId || 'BATCH-08A'}</td>
                   <td style={{ fontWeight: '700' }}>{p.noKwitansi}</td>
@@ -110,6 +108,33 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
                       <span className="badge badge-warning">Sisa Pelunasan</span>
                     ) : (
                       <span className="badge badge-navy">Belum Lunas</span>
+                    )}
+                  </td>
+                  <td>
+                    {p.buktiUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewImageUrl(p.buktiUrl || '')}
+                        style={{
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          borderRadius: '6px',
+                          padding: '4px 8px',
+                          color: '#10B981',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '10px',
+                          fontWeight: '700',
+                        }}
+                        title="Klik untuk lihat foto kwitansi DP"
+                      >
+                        <Paperclip size={13} color="#10B981" />
+                        <span>Kwitansi</span>
+                      </button>
+                    ) : (
+                      <span style={{ color: '#CBD5E1', fontSize: '10px' }}>-</span>
                     )}
                   </td>
                   <td>
@@ -138,6 +163,22 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
           </table>
         </div>
       </div>
+
+      <PaginationControl
+        currentCount={Math.min(displayLimit, filteredPanjar.length)}
+        totalCount={filteredPanjar.length}
+        pageSize={5}
+        onLoadMore={() => setDisplayLimit(prev => prev + 5)}
+        onReset={() => setDisplayLimit(5)}
+      />
+
+      {previewImageUrl && (
+        <ImagePreviewModal
+          imageUrl={previewImageUrl}
+          title="Foto Kwitansi Panjar DP"
+          onClose={() => setPreviewImageUrl(null)}
+        />
+      )}
 
       {deleteTargetId && (
         <ConfirmDeleteModal

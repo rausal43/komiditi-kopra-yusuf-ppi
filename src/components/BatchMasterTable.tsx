@@ -19,7 +19,7 @@ export const BatchMasterTable: React.FC<BatchMasterTableProps> = ({
   const itemsPerPage = 5;
 
   const filteredBatches = useMemo(() => {
-    return batchList.filter(b => {
+    const list = batchList.filter(b => {
       const matchesSearch =
         b.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.namaBatch.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -35,6 +35,9 @@ export const BatchMasterTable: React.FC<BatchMasterTableProps> = ({
 
       return matchesSearch && matchesStatus;
     });
+
+    // Sort Newest Batch First
+    return [...list].sort((a, b) => b.id.localeCompare(a.id));
   }, [batchList, searchTerm, statusFilter]);
 
   const totalPages = Math.ceil(filteredBatches.length / itemsPerPage) || 1;
@@ -46,7 +49,7 @@ export const BatchMasterTable: React.FC<BatchMasterTableProps> = ({
   return (
     <div className="card">
       <div className="card-title" style={{ flexWrap: 'wrap', gap: '10px' }}>
-        <span style={{ fontSize: '13px', fontWeight: '800' }}>Daftar Master Batch ({filteredBatches.length} Batch Ditemukan)</span>
+        <span style={{ fontSize: '13px', fontWeight: '800' }}>Daftar Batch Operasional ({filteredBatches.length} Batch Ditemukan)</span>
 
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Status Filter Pills */}

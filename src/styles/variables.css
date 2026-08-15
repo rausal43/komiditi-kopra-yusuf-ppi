@@ -1,0 +1,28 @@
+/* Design Tokens, Variables & Keyframe Animations */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --primary-orange: #FF5000;
+  --orange-hover: #E04600;
+  --bg-slate: #F8FAFC;
+  --text-dark: #0F172A;
+  --text-muted: #64748B;
+  --border-light: #E2E8F0;
+  --card-bg: #FFFFFF;
+}
+
+/* Spinner Rotation Animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 0.8s linear infinite !important;
+  display: inline-block;
+  transform-origin: center center;
+}

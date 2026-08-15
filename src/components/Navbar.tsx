@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Menu, LogOut, ShieldCheck, Truck, Warehouse } from 'lucide-react';
+import { Menu, LogOut, ShieldCheck, Truck, Warehouse, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { user, activeRole, logout, setIsMobileMenuOpen } = useApp();
+  const { user, activeRole, logout, setIsMobileMenuOpen, isSidebarCollapsed, toggleSidebar } = useApp();
   const [isHidden, setIsHidden] = useState(false);
 
   useEffect(() => {
@@ -32,15 +32,26 @@ export const Navbar: React.FC = () => {
   return (
     <header className={`header-hero ${isHidden ? 'header-hidden' : ''}`}>
       <div className="header-compact">
-        {/* Left: Burger Menu & App Title */}
+        {/* Left: Desktop Toggle, Burger Menu & App Title */}
         <div className="header-brand-group">
           <button
             className="mobile-burger-btn"
             onClick={() => setIsMobileMenuOpen(true)}
-            aria-label="Buka Menu"
+            aria-label="Buka Menu Mobile"
           >
             <Menu size={20} color="#FFFFFF" />
           </button>
+
+          <button
+            type="button"
+            className="desktop-sidebar-toggle-btn"
+            onClick={toggleSidebar}
+            title={isSidebarCollapsed ? 'Tampilkan Sidebar' : 'Sembunyikan Sidebar'}
+          >
+            {isSidebarCollapsed ? <PanelLeftOpen size={18} color="#FF5000" /> : <PanelLeftClose size={18} color="#94A3B8" />}
+            <span className="desktop-toggle-text">{isSidebarCollapsed ? 'Buka Sidebar' : 'Sembunyikan Sidebar'}</span>
+          </button>
+
           <div className="header-app-name">KOPRA SEJATI</div>
         </div>
 

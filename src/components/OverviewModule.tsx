@@ -35,21 +35,6 @@ export const OverviewModule: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Overview Header */}
-      <div className="card" style={{ padding: '16px 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <span className="badge badge-orange" style={{ marginBottom: '4px' }}>Dashboard Overview & Analitik</span>
-            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>
-              Eksekutif Dashboard Performa Finansial & Operasional
-            </h2>
-            <p style={{ fontSize: '11px', color: '#64748B' }}>
-              Visualisasi real-time status batch, pendapatan pabrik, alokasi modal, dan efisiensi tonase.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* 4 Core Metric Summary Cards (Full Unabbreviated Numbers) */}
       <div className="grid-4">
         <div className="card" style={{ padding: '14px 16px' }}>

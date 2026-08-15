@@ -7,7 +7,9 @@ import { BatchSettingModule } from './components/BatchSettingModule';
 import { BelanjaModule } from './components/BelanjaModule';
 import { TransshipmentModule } from './components/TransshipmentModule';
 import { SettlementModule } from './components/SettlementModule';
+import { MasterModule } from './components/MasterModule';
 import { OverviewModule } from './components/OverviewModule';
+import { GalleryModule } from './components/GalleryModule';
 import { LoginScreen } from './components/LoginScreen';
 
 const MainContent: React.FC = () => {
@@ -19,6 +21,9 @@ const MainContent: React.FC = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'master':
+      case 'master-data':
+        return <MasterModule />;
       case 'batch-setting':
       case 'dashboard':
         return <BatchSettingModule />;
@@ -36,6 +41,9 @@ const MainContent: React.FC = () => {
       case 'laporan':
       case 'overview':
         return <OverviewModule />;
+      case 'gallery':
+      case 'galeri':
+        return <GalleryModule />;
       default:
         return <BatchSettingModule />;
     }

@@ -3,14 +3,16 @@ import { useApp } from '../context/AppContext';
 import { TransshipmentModal } from './TransshipmentModal';
 import { BatchPickerModal } from './BatchPickerModal';
 import { BatchModal } from './BatchModal';
+import { ImagePreviewModal } from './ImagePreviewModal';
 import type { MilestoneStatus } from '../types';
-import { Plus, ChevronDown, Ship, MapPin } from 'lucide-react';
+import { Plus, ChevronDown, Ship, MapPin, Paperclip } from 'lucide-react';
 
 export const TransshipmentModule: React.FC = () => {
   const { batchList, addBatch, updateBatchMilestone, activeModal, setActiveModal } = useApp();
   const [selectedBatchId, setSelectedBatchId] = useState(batchList[0]?.id || '');
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [showBatchPickerModal, setShowBatchPickerModal] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   const activeBatch = batchList.find(b => b.id === selectedBatchId) || batchList[0];
   const isBatchModalOpen = activeModal === 'BATCH';
@@ -35,8 +37,12 @@ export const TransshipmentModule: React.FC = () => {
             <Ship size={18} color="#FF5000" /> Milestone Tracking Pelayaran Kapal
           </h2>
 
-          <button className="btn btn-primary desktop-only-btn" style={{ borderRadius: '99px', padding: '8px 16px' }} onClick={() => setActiveModal('BATCH')}>
-            <Plus size={15} /> Buat Batch Baru
+          <button
+            className="btn btn-primary desktop-only-btn"
+            style={{ borderRadius: '99px', padding: '8px 16px', fontSize: '12px', gap: '6px' }}
+            onClick={() => setShowMilestoneModal(true)}
+          >
+            <Plus size={15} /> Update Milestone Pelayaran
           </button>
         </div>
       </div>
@@ -81,27 +87,61 @@ export const TransshipmentModule: React.FC = () => {
             </div>
             <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', marginTop: '2px' }}>{activeBatch.lokasiSaatIni}</div>
 
-            <div style={{ display: 'flex', gap: '16px', marginTop: '10px', flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: '10px', color: '#64748B' }}>Berat Gudang Sekely</div>
-                <div style={{ fontSize: '12px', fontWeight: '800', color: '#FF5000' }}>{(activeBatch.beratSekely / 1000).toFixed(2)} Ton</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '10px', color: '#64748B' }}>Total Biaya Shipping</div>
-                <div style={{ fontSize: '12px', fontWeight: '800', color: '#10B981' }}>
-                  Rp {(
-                    activeBatch.biayaUpahPanggul +
-                    activeBatch.biayaSewaFeeder +
-                    activeBatch.biayaFreightSabuk +
-                    activeBatch.biayaUangJalan +
-                    activeBatch.biayaTruckingBitung +
-                    activeBatch.biayaAdminBriLink
-                  ).toLocaleString('id-ID')}
+            <div style={{ display: 'flex', gap: '16px', marginTop: '10px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#64748B' }}>Berat Gudang Sekely</div>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#FF5000' }}>{(activeBatch.beratSekely / 1000).toFixed(2)} Ton</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#64748B' }}>Total Biaya Shipping</div>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#10B981' }}>
+                    Rp {(
+                      activeBatch.biayaUpahPanggul +
+                      activeBatch.biayaSewaFeeder +
+                      activeBatch.biayaFreightSabuk +
+                      activeBatch.biayaUangJalan +
+                      activeBatch.biayaTruckingBitung +
+                      activeBatch.biayaAdminBriLink
+                    ).toLocaleString('id-ID')}
+                  </div>
                 </div>
               </div>
+
+              {(activeBatch as any).fotoUrl && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewImageUrl((activeBatch as any).fotoUrl)}
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    color: '#10B981',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                  }}
+                  title="Klik untuk lihat foto surat jalan / bukti kapal"
+                >
+                  <Paperclip size={14} color="#10B981" />
+                  <span>Lihat Bukti Surat Jalan</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
+      )}
+
+      {previewImageUrl && (
+        <ImagePreviewModal
+          imageUrl={previewImageUrl}
+          title="Foto Surat Jalan / Pelayaran Kapal"
+          onClose={() => setPreviewImageUrl(null)}
+        />
       )}
 
       {showBatchPickerModal && (

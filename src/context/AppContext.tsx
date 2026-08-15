@@ -24,6 +24,9 @@ interface AppContextType {
   setActiveTab: (tab: string) => void;
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
+  isSidebarCollapsed: boolean;
+  setIsSidebarCollapsed: (collapsed: boolean) => void;
+  toggleSidebar: () => void;
   
   activeModal: ActiveModalType;
   setActiveModal: (modal: ActiveModalType) => void;
@@ -42,10 +45,13 @@ interface AppContextType {
   daftarKapal: string[];
   daftarGudang: string[];
   addAkunOwner: (nama: string) => void;
+  editAkunOwner: (oldNama: string, newNama: string) => void;
   deleteAkunOwner: (nama: string) => void;
   addKapal: (nama: string) => void;
+  editKapal: (oldNama: string, newNama: string) => void;
   deleteKapal: (nama: string) => void;
   addGudang: (nama: string) => void;
+  editGudang: (oldNama: string, newNama: string) => void;
   deleteGudang: (nama: string) => void;
 
   addPanjar: (panjar: Omit<PanjarDP, 'id'>) => void;
@@ -83,6 +89,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeRole, setActiveRoleState] = useState<Role>(user?.role || 'LOGISTIK');
   const [activeTab, setActiveTab] = useState<string>('batch');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem('ks_sidebar_collapsed') === 'true';
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('ks_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   const loginWithCredentials = async (usernameInput: string, passwordInput: string) => {
     const authenticatedUser = await dbService.authenticateUser(usernameInput, passwordInput);
@@ -163,6 +180,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const editAkunOwner = (oldNama: string, newNama: string) => {
+    if (!canEditOrDelete || !newNama.trim()) return;
+    setDaftarAkunOwner(prev => prev.map(a => a === oldNama ? newNama.trim() : a));
+  };
+
   const deleteAkunOwner = (nama: string) => {
     if (!canEditOrDelete) return;
     setDaftarAkunOwner(prev => prev.filter(a => a !== nama));
@@ -174,6 +196,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const editKapal = (oldNama: string, newNama: string) => {
+    if (!canEditOrDelete || !newNama.trim()) return;
+    setDaftarKapal(prev => prev.map(k => k === oldNama ? newNama.trim() : k));
+  };
+
   const deleteKapal = (nama: string) => {
     if (!canEditOrDelete) return;
     setDaftarKapal(prev => prev.filter(k => k !== nama));
@@ -183,6 +210,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (nama.trim() && !daftarGudang.includes(nama.trim())) {
       setDaftarGudang(prev => [...prev, nama.trim()]);
     }
+  };
+
+  const editGudang = (oldNama: string, newNama: string) => {
+    if (!canEditOrDelete || !newNama.trim()) return;
+    setDaftarGudang(prev => prev.map(g => g === oldNama ? newNama.trim() : g));
   };
 
   const deleteGudang = (nama: string) => {
@@ -289,9 +321,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         user, login, loginWithCredentials, logout, canEditOrDelete,
         activeRole, setActiveRole, activeTab, setActiveTab, isMobileMenuOpen, setIsMobileMenuOpen,
+        isSidebarCollapsed, setIsSidebarCollapsed, toggleSidebar,
         activeModal, setActiveModal, belanjaSubTab, setBelanjaSubTab, openContextualFabModal,
         panjarList, timbanganList, batchList, settlementList, priceSetting, aiReports,
-        daftarAkunOwner, daftarKapal, daftarGudang, addAkunOwner, deleteAkunOwner, addKapal, deleteKapal, addGudang, deleteGudang,
+        daftarAkunOwner, daftarKapal, daftarGudang, addAkunOwner, editAkunOwner, deleteAkunOwner, addKapal, editKapal, deleteKapal, addGudang, editGudang, deleteGudang,
         addPanjar, deletePanjar, addTimbangan, deleteTimbangan, addBatch, deleteBatch, updateBatchMilestone, addSettlement, deleteSettlement, updatePriceSetting, generateAIReport,
       }}
     >

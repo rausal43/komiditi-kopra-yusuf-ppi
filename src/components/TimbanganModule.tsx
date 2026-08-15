@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TimbanganModal } from './TimbanganModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
-import { Plus, Filter, Scale, DollarSign, Droplets, Package, Trash2, Lock } from 'lucide-react';
+import { ImagePreviewModal } from './ImagePreviewModal';
+import { PaginationControl } from './PaginationControl';
+import { BatchFilterSelect } from './common/BatchFilterSelect';
+import { Plus, Scale, DollarSign, Droplets, Package, Trash2, Lock, Paperclip } from 'lucide-react';
 
 interface TimbanganModuleProps {
   selectedBatchId?: string;
@@ -16,6 +19,8 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
   const { timbanganList, batchList, addTimbangan, deleteTimbangan, canEditOrDelete, activeModal, setActiveModal } = useApp();
   const [internalFilterBatch, setInternalFilterBatch] = useState('ALL');
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [displayLimit, setDisplayLimit] = useState<number>(5);
 
   const selectedFilterBatch = externalBatchId !== undefined ? externalBatchId : internalFilterBatch;
   const isModalOpen = activeModal === 'TIMBANGAN';
@@ -28,9 +33,9 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
     }
   };
 
-  const filteredTimbangan = timbanganList.filter(t => {
-    return selectedFilterBatch === 'ALL' || t.batchId === selectedFilterBatch;
-  });
+  const filteredTimbangan = timbanganList
+    .filter(t => selectedFilterBatch === 'ALL' || t.batchId === selectedFilterBatch)
+    .sort((a, b) => (b.id || '').localeCompare(a.id || ''));
 
   const totalKarung = filteredTimbangan.reduce((acc, curr) => acc + (curr.rincianKarung?.length || 0), 0);
   const totalNettoKg = filteredTimbangan.reduce((acc, curr) => acc + curr.totalNetto, 0);
@@ -42,21 +47,11 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
       {/* Action & Filter Toolbar */}
       <div className="card" style={{ padding: '12px 18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Filter size={14} color="#FF5000" />
-            <span style={{ fontSize: '11px', fontWeight: '700', color: '#0F172A' }}>Filter Batch:</span>
-            <select
-              className="form-select"
-              style={{ width: '160px', padding: '6px 10px', fontSize: '11px' }}
-              value={selectedFilterBatch}
-              onChange={e => handleFilterChange(e.target.value)}
-            >
-              <option value="ALL">Semua Batch</option>
-              {batchList.map(b => (
-                <option key={b.id} value={b.id}>{b.id}</option>
-              ))}
-            </select>
-          </div>
+          <BatchFilterSelect
+            batchList={batchList}
+            selectedBatchId={selectedFilterBatch}
+            onChange={handleFilterChange}
+          />
 
           <button className="btn btn-primary desktop-only-btn" style={{ fontSize: '11px', padding: '7px 12px' }} onClick={() => setActiveModal('TIMBANGAN')}>
             <Plus size={14} /> + Input Timbangan Baru
@@ -119,66 +114,113 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
                 <th>Harga/kg</th>
                 <th>Nominal Beli</th>
                 <th>Panjar</th>
+                <th>Foto Karung</th>
                 <th>Aksi / Status</th>
               </tr>
             </thead>
             <tbody>
-              {filteredTimbangan.map(t => (
-                <tr key={t.id}>
-                  <td style={{ fontWeight: '800', color: '#FF5000' }}>{t.batchId || 'BATCH-08A'}</td>
-                  <td>{t.tgl}</td>
-                  <td style={{ fontWeight: '700' }}>{t.namaTuanToko}</td>
-                  <td>{t.rincianKarung.length} koli</td>
-                  <td>{t.totalGross} kg</td>
-                  <td>
-                    <span className="badge badge-navy" title={
-                      t.kadarAirPerKarung
-                        ? `Per karung: ${t.kadarAirPerKarung.map((ka, i) => `#${i+1}: ${ka}%`).join(', ')}`
-                        : undefined
-                    } style={{ cursor: t.kadarAirPerKarung ? 'help' : 'default' }}>
-                      {t.kadarAirPerKarung
-                        ? `${(t.kadarAirPerKarung.reduce((a, b) => a + b, 0) / t.kadarAirPerKarung.length).toFixed(1)}%`
-                        : `${t.kadarAir || 6.0}%`
-                      }
-                      {t.kadarAirPerKarung && <span style={{ fontSize: '8px', marginLeft: '2px', opacity: 0.7 }}>({t.kadarAirPerKarung.length})</span>}
-                    </span>
-                  </td>
-                  <td style={{ fontWeight: '800' }}>{t.totalNetto.toLocaleString('id-ID')} kg</td>
-                  <td>Rp {t.hargaBeliPerKg.toLocaleString('id-ID')}</td>
-                  <td style={{ fontWeight: '700' }}>Rp {t.totalNominalBeli.toLocaleString('id-ID')}</td>
-                  <td>
-                    {t.potonganDp > 0 ? (
-                      <span className="badge badge-success">-Rp {t.potonganDp.toLocaleString('id-ID')}</span>
-                    ) : (
-                      <span className="badge badge-navy">-</span>
-                    )}
-                  </td>
-                  <td>
-                    {canEditOrDelete ? (
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTargetId(t.id)}
-                        style={{
-                          background: '#FEF2F2', border: 'none', borderRadius: '6px',
-                          padding: '4px 8px', color: '#EF4444', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
-                        }}
-                        title="Hapus Transaksi (Khusus Owner)"
-                      >
-                        <Trash2 size={12} /> Hapus
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: '10px', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }} title="Tersimpan - Tidak dapat diubah oleh Logistik">
-                        <Lock size={11} color="#64748B" /> Tersimpan
+              {filteredTimbangan.slice(0, displayLimit).map(t => {
+                const fotoUrl = t.fotoPerKarung?.find(f => f.length > 0) || t.notaUrl;
+                return (
+                  <tr key={t.id}>
+                    <td style={{ fontWeight: '800', color: '#FF5000' }}>{t.batchId || 'BATCH-08A'}</td>
+                    <td>{t.tgl}</td>
+                    <td style={{ fontWeight: '700' }}>{t.namaTuanToko}</td>
+                    <td>{t.rincianKarung.length} koli</td>
+                    <td>{t.totalGross} kg</td>
+                    <td>
+                      <span className="badge badge-navy" title={
+                        t.kadarAirPerKarung
+                          ? `Per karung: ${t.kadarAirPerKarung.map((ka, i) => `#${i+1}: ${ka}%`).join(', ')}`
+                          : undefined
+                      } style={{ cursor: t.kadarAirPerKarung ? 'help' : 'default' }}>
+                        {t.kadarAirPerKarung
+                          ? `${(t.kadarAirPerKarung.reduce((a, b) => a + b, 0) / t.kadarAirPerKarung.length).toFixed(1)}%`
+                          : `${t.kadarAir || 6.0}%`
+                        }
+                        {t.kadarAirPerKarung && <span style={{ fontSize: '8px', marginLeft: '2px', opacity: 0.7 }}>({t.kadarAirPerKarung.length})</span>}
                       </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td style={{ fontWeight: '800' }}>{t.totalNetto.toLocaleString('id-ID')} kg</td>
+                    <td>Rp {t.hargaBeliPerKg.toLocaleString('id-ID')}</td>
+                    <td style={{ fontWeight: '700' }}>Rp {t.totalNominalBeli.toLocaleString('id-ID')}</td>
+                    <td>
+                      {t.potonganDp > 0 ? (
+                        <span className="badge badge-success">-Rp {t.potonganDp.toLocaleString('id-ID')}</span>
+                      ) : (
+                        <span className="badge badge-navy">-</span>
+                      )}
+                    </td>
+                    <td>
+                      {fotoUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewImageUrl(fotoUrl)}
+                          style={{
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            color: '#10B981',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '10px',
+                            fontWeight: '700',
+                          }}
+                          title="Klik untuk lihat foto timbangan karung"
+                        >
+                          <Paperclip size={13} color="#10B981" />
+                          <span>Lihat Foto</span>
+                        </button>
+                      ) : (
+                        <span style={{ color: '#CBD5E1', fontSize: '10px' }}>-</span>
+                      )}
+                    </td>
+                    <td>
+                      {canEditOrDelete ? (
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTargetId(t.id)}
+                          style={{
+                            background: '#FEF2F2', border: 'none', borderRadius: '6px',
+                            padding: '4px 8px', color: '#EF4444', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
+                          }}
+                          title="Hapus Transaksi (Khusus Owner)"
+                        >
+                          <Trash2 size={12} /> Hapus
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '10px', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }} title="Tersimpan - Tidak dapat diubah oleh Logistik">
+                          <Lock size={11} color="#64748B" /> Tersimpan
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
+
+      <PaginationControl
+        currentCount={Math.min(displayLimit, filteredTimbangan.length)}
+        totalCount={filteredTimbangan.length}
+        pageSize={5}
+        onLoadMore={() => setDisplayLimit(prev => prev + 5)}
+        onReset={() => setDisplayLimit(5)}
+      />
+
+      {previewImageUrl && (
+        <ImagePreviewModal
+          imageUrl={previewImageUrl}
+          title="Foto Timbangan Karung"
+          onClose={() => setPreviewImageUrl(null)}
+        />
+      )}
 
       {deleteTargetId && (
         <ConfirmDeleteModal

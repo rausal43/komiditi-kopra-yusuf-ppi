@@ -19,7 +19,7 @@ export const BatchPickerModal: React.FC<BatchPickerModalProps> = ({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'AKTIF' | 'SELESAI'>('ALL');
 
   const filteredBatches = useMemo(() => {
-    return batchList.filter(b => {
+    const list = batchList.filter(b => {
       const matchesSearch =
         b.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.namaBatch.toLowerCase().includes(searchTerm.toLowerCase());
@@ -34,6 +34,8 @@ export const BatchPickerModal: React.FC<BatchPickerModalProps> = ({
 
       return matchesSearch && matchesStatus;
     });
+
+    return [...list].sort((a, b) => b.id.localeCompare(a.id));
   }, [batchList, searchTerm, statusFilter]);
 
   return (

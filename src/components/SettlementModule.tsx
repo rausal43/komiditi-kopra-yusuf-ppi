@@ -2,18 +2,23 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { SettlementModal } from './SettlementModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
-import { Building2, Plus, Filter, DollarSign, Award, TrendingUp, Paperclip, Trash2, Lock } from 'lucide-react';
+import { ImagePreviewModal } from './ImagePreviewModal';
+import { PaginationControl } from './PaginationControl';
+import { BatchFilterSelect } from './common/BatchFilterSelect';
+import { Plus, Building2, TrendingUp, DollarSign, Award, Trash2, Lock, Paperclip } from 'lucide-react';
 
 export const SettlementModule: React.FC = () => {
   const { settlementList, batchList, addSettlement, deleteSettlement, canEditOrDelete, activeModal, setActiveModal } = useApp();
   const [selectedFilterBatch, setSelectedFilterBatch] = useState('ALL');
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [displayLimit, setDisplayLimit] = useState<number>(5);
 
   const isModalOpen = activeModal === 'SETTLEMENT';
 
-  const filteredSettlement = settlementList.filter(s => {
-    return selectedFilterBatch === 'ALL' || s.batchId === selectedFilterBatch;
-  });
+  const filteredSettlement = settlementList
+    .filter(s => selectedFilterBatch === 'ALL' || s.batchId === selectedFilterBatch)
+    .sort((a, b) => (b.id || '').localeCompare(a.id || ''));
 
   const totalPenerimaan = filteredSettlement.reduce((acc, curr) => acc + curr.totalPenerimaanPabrik, 0);
   const totalProfit = filteredSettlement.reduce((acc, curr) => acc + curr.nettProfitMargin, 0);
@@ -29,20 +34,13 @@ export const SettlementModule: React.FC = () => {
           </h2>
 
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Filter size={13} color="#FF5000" />
-              <select
-                className="form-select"
-                style={{ width: '140px', padding: '6px 8px', fontSize: '11px' }}
-                value={selectedFilterBatch}
-                onChange={e => setSelectedFilterBatch(e.target.value)}
-              >
-                <option value="ALL">Semua Batch</option>
-                {batchList.map(b => (
-                  <option key={b.id} value={b.id}>{b.id}</option>
-                ))}
-              </select>
-            </div>
+            <BatchFilterSelect
+              batchList={batchList}
+              selectedBatchId={selectedFilterBatch}
+              onChange={setSelectedFilterBatch}
+              width="140px"
+              showLabel={false}
+            />
 
             <button className="btn btn-primary desktop-only-btn" style={{ padding: '7px 14px', fontSize: '11px' }} onClick={() => setActiveModal('SETTLEMENT')}>
               <Plus size={14} /> + Settlement
@@ -105,7 +103,7 @@ export const SettlementModule: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredSettlement.map(s => (
+              {filteredSettlement.slice(0, displayLimit).map(s => (
                 <tr key={s.id}>
                   <td style={{ fontWeight: '800', color: '#FF5000' }}>{s.id}</td>
                   <td><span className="badge badge-navy">{s.batchId}</span></td>
@@ -120,9 +118,27 @@ export const SettlementModule: React.FC = () => {
                   </td>
                   <td>
                     {(s.fotoNotaTimbangPabrik || s.lampiranNotaPabrikUrl) ? (
-                      <span title="Foto nota timbang tersedia" style={{ cursor: 'pointer' }}>
-                        <Paperclip size={14} color="#10B981" />
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewImageUrl(s.fotoNotaTimbangPabrik || s.lampiranNotaPabrikUrl || '')}
+                        style={{
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          borderRadius: '6px',
+                          padding: '4px 8px',
+                          color: '#10B981',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '10px',
+                          fontWeight: '700',
+                        }}
+                        title="Klik untuk lihat foto nota timbang pabrik"
+                      >
+                        <Paperclip size={13} color="#10B981" />
+                        <span>Lihat Nota</span>
+                      </button>
                     ) : (
                       <span style={{ color: '#CBD5E1', fontSize: '10px' }}>-</span>
                     )}
@@ -153,6 +169,22 @@ export const SettlementModule: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <PaginationControl
+        currentCount={Math.min(displayLimit, filteredSettlement.length)}
+        totalCount={filteredSettlement.length}
+        pageSize={5}
+        onLoadMore={() => setDisplayLimit(prev => prev + 5)}
+        onReset={() => setDisplayLimit(5)}
+      />
+
+      {previewImageUrl && (
+        <ImagePreviewModal
+          imageUrl={previewImageUrl}
+          title="Nota Timbang Pabrik"
+          onClose={() => setPreviewImageUrl(null)}
+        />
+      )}
 
       {deleteTargetId && (
         <ConfirmDeleteModal

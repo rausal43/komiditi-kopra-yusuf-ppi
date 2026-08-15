@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { BatchPickerModal } from './BatchPickerModal';
 import type { PaymentMethod } from '../types';
-import { X, UploadCloud, Wallet, ChevronDown } from 'lucide-react';
+import { X, Wallet, ChevronDown, Loader2, Camera } from 'lucide-react';
+import { uploadToR2 } from '../lib/r2Service';
 
 interface PanjarModalProps {
   initialBatchId?: string;
@@ -16,6 +17,7 @@ interface PanjarModalProps {
     noRekening: string;
     catatan: string;
     batchId?: string;
+    buktiUrl?: string;
   }) => void;
 }
 
@@ -29,8 +31,24 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
   const [bank, setBank] = useState<PaymentMethod>('BRILink');
   const [noRekening, setNoRekening] = useState('');
   const [catatan, setCatatan] = useState('');
+  const [buktiUrl, setBuktiUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fotoInputRef = useRef<HTMLInputElement>(null);
   const [selectedBatchId, setSelectedBatchId] = useState(initialBatchId && initialBatchId !== 'ALL' ? initialBatchId : batchList[0]?.id || '');
   const [showPicker, setShowPicker] = useState(false);
+
+  const handleFotoUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const url = await uploadToR2(file, 'panjar');
+      setBuktiUrl(url);
+    } catch (err) {
+      console.error('Error uploading receipt to R2:', err);
+      alert('Gagal mengunggah foto kwitansi ke Cloudflare R2');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const parseDigits = (val: string): number => {
     const clean = val.replace(/\D/g, '');
@@ -61,9 +79,10 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
       namaPenerima,
       nominalDp: num,
       bank,
-      noRekening: noRekening || `${bank} Sekely`,
+      noRekening,
       catatan,
       batchId: selectedBatchId,
+      buktiUrl: buktiUrl || undefined,
     });
   };
 
@@ -157,11 +176,39 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
           </div>
 
           <div className="form-group">
-            <label className="form-label">Foto Kwitansi DP</label>
-            <div style={{ border: '2px dashed var(--brand-border)', borderRadius: '10px', padding: '8px', textAlign: 'center', background: '#F8FAFC' }}>
-              <UploadCloud size={18} color="#FF5000" style={{ margin: '0 auto 2px auto' }} />
-              <div style={{ fontSize: '10px', fontWeight: '700', color: '#0F172A' }}>Klik foto Kwitansi DP</div>
-            </div>
+            <label className="form-label">Foto Kwitansi DP (Opsional)</label>
+            <input
+              ref={fotoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: 'none' }}
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) handleFotoUpload(file);
+              }}
+            />
+            {isUploading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', background: '#FFF7ED', border: '2px dashed #FF5000', borderRadius: '10px', color: '#FF5000', fontSize: '11px', fontWeight: '600' }}>
+                <Loader2 size={16} className="animate-spin" /> Mengunggah kwitansi ke Cloudflare R2...
+              </div>
+            ) : buktiUrl ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px', background: '#ECFDF5', border: '1px solid #10B981', borderRadius: '8px' }}>
+                <img src={buktiUrl} alt="Kwitansi DP" style={{ width: '45px', height: '45px', borderRadius: '6px', objectFit: 'cover' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '10px', fontWeight: '700', color: '#10B981' }}>✓ Kwitansi Ter-upload (R2)</div>
+                  <button type="button" onClick={() => fotoInputRef.current?.click()} style={{ fontSize: '10px', color: '#FF5000', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '700', textDecoration: 'underline' }}>Ganti Foto</button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => fotoInputRef.current?.click()}
+                style={{ border: '2px dashed var(--brand-border)', borderRadius: '10px', padding: '10px', textAlign: 'center', background: '#F8FAFC', cursor: 'pointer' }}
+              >
+                <Camera size={18} color="#FF5000" style={{ margin: '0 auto 2px auto' }} />
+                <div style={{ fontSize: '10px', fontWeight: '700', color: '#0F172A' }}>Ambil Foto / Pilih Kwitansi DP (R2)</div>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>

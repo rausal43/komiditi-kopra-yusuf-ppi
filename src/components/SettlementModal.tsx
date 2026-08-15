@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { X, Calculator, Scale, Camera, ImageIcon } from 'lucide-react';
+import { X, Calculator, Scale, Camera, ImageIcon, Loader2 } from 'lucide-react';
+import { uploadToR2 } from '../lib/r2Service';
 
 interface SettlementModalProps {
   onClose: () => void;
@@ -28,46 +29,23 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
   const [kadarAirLabPercent, setKadarAirLabPercent] = useState<number | ''>(5.2);
   const [hargaAcuanStr, setHargaAcuanStr] = useState(`Rp ${priceSetting.hargaAcuanPabrikWilmar.toLocaleString('id-ID')}`);
   const [fotoNotaTimbang, setFotoNotaTimbang] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
   const [previewFoto, setPreviewFoto] = useState(false);
   const fotoInputRef = useRef<HTMLInputElement>(null);
 
-  const compressImage = (file: File, maxSizeKB: number = 300): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let w = img.width;
-          let h = img.height;
-          const maxDim = 1200;
-          if (w > maxDim || h > maxDim) {
-            const ratio = Math.min(maxDim / w, maxDim / h);
-            w = Math.round(w * ratio);
-            h = Math.round(h * ratio);
-          }
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d')!;
-          ctx.drawImage(img, 0, 0, w, h);
-          let quality = 0.7;
-          let result = canvas.toDataURL('image/jpeg', quality);
-          while (result.length > maxSizeKB * 1024 * 1.37 && quality > 0.1) {
-            quality -= 0.1;
-            result = canvas.toDataURL('image/jpeg', quality);
-          }
-          resolve(result);
-        };
-        img.src = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    });
+  const handleFotoUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const url = await uploadToR2(file, 'settlements');
+      setFotoNotaTimbang(url);
+    } catch (err) {
+      console.error('Error uploading to R2:', err);
+      alert('Gagal mengunggah foto ke Cloudflare R2');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleFotoUpload = async (file: File) => {
-    const compressed = await compressImage(file);
-    setFotoNotaTimbang(compressed);
-  };
 
   const selectedBatch = batchList.find(b => b.id === selectedBatchId) || batchList[0];
 
@@ -195,7 +173,11 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
                 if (file) handleFotoUpload(file);
               }}
             />
-            {fotoNotaTimbang ? (
+            {isUploading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', background: '#FFF7ED', border: '2px dashed #FF5000', borderRadius: '10px', color: '#FF5000', fontSize: '12px', fontWeight: '600' }}>
+                <Loader2 size={18} className="animate-spin" /> Mengunggah ke Cloudflare R2...
+              </div>
+            ) : fotoNotaTimbang ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div
                   style={{
@@ -207,7 +189,7 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
                   <img src={fotoNotaTimbang} alt="Nota" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '10px', color: '#10B981', fontWeight: '700' }}>✓ Foto ter-upload</span>
+                  <span style={{ fontSize: '10px', color: '#10B981', fontWeight: '700' }}>✓ Foto ter-upload (R2)</span>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button type="button" onClick={() => fotoInputRef.current?.click()}
                       style={{ fontSize: '10px', color: '#FF5000', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '700', textDecoration: 'underline' }}>
@@ -231,7 +213,7 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#FF5000'; e.currentTarget.style.background = '#FFF7ED'; e.currentTarget.style.color = '#FF5000'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#64748B'; }}
               >
-                <ImageIcon size={18} /> Klik untuk upload foto nota timbang
+                <ImageIcon size={18} /> Klik untuk upload foto nota timbang (R2)
               </button>
             )}
           </div>

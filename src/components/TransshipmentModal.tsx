@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { MilestoneStatus } from '../types';
-import { X, Camera, Check } from 'lucide-react';
+import { X, Camera, Check, Loader2 } from 'lucide-react';
+import { uploadToR2 } from '../lib/r2Service';
 
 interface TransshipmentModalProps {
   milestones: { key: MilestoneStatus; label: string }[];
@@ -13,7 +14,8 @@ export const TransshipmentModal: React.FC<TransshipmentModalProps> = ({ mileston
   const [newMilestone, setNewMilestone] = useState<MilestoneStatus>('Loading Feeder');
   const [newLokasi, setNewLokasi] = useState('');
   const [biayaTransportStr, setBiayaTransportStr] = useState('Rp 2.500.000');
-  const [fotoFileName, setFotoFileName] = useState('');
+  const [fotoUrl, setFotoUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const parseDigits = (val: string): number => {
     const clean = val.replace(/\D/g, '');
@@ -27,16 +29,26 @@ export const TransshipmentModal: React.FC<TransshipmentModalProps> = ({ mileston
     setBiayaTransportStr(num ? `Rp ${num.toLocaleString('id-ID')}` : '');
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFotoFileName(e.target.files[0].name);
+      const file = e.target.files[0];
+      setIsUploading(true);
+      try {
+        const url = await uploadToR2(file, 'transshipment');
+        setFotoUrl(url);
+      } catch (err) {
+        console.error('Error uploading shipping document to R2:', err);
+        alert('Gagal mengunggah foto surat jalan ke Cloudflare R2');
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const nominal = isNaikKapal ? parseDigits(biayaTransportStr) : undefined;
-    onSubmit(newMilestone, newLokasi || newMilestone, nominal, fotoFileName || 'surat_jalan_kapal.jpg');
+    onSubmit(newMilestone, newLokasi || newMilestone, nominal, fotoUrl || undefined);
   };
 
   return (
@@ -113,17 +125,22 @@ export const TransshipmentModal: React.FC<TransshipmentModalProps> = ({ mileston
               <label
                 htmlFor="foto-pelayaran-input"
                 className="btn btn-outline"
-                style={{ width: '100%', justifyContent: 'center', gap: '6px', fontSize: '11px', borderStyle: 'dashed' }}
+                style={{ width: '100%', justifyContent: 'center', gap: '6px', fontSize: '11px', borderStyle: 'dashed', cursor: 'pointer' }}
               >
-                {fotoFileName ? (
+                {isUploading ? (
+                  <>
+                    <Loader2 size={14} color="#FF5000" className="animate-spin" />
+                    <span style={{ color: '#FF5000', fontWeight: '700' }}>Mengunggah ke Cloudflare R2...</span>
+                  </>
+                ) : fotoUrl ? (
                   <>
                     <Check size={14} color="#10B981" />
-                    <span style={{ color: '#10B981', fontWeight: '700' }}>{fotoFileName}</span>
+                    <span style={{ color: '#10B981', fontWeight: '700' }}>✓ Foto ter-upload (R2)</span>
                   </>
                 ) : (
                   <>
                     <Camera size={14} color="#FF5000" />
-                    <span>Ambil Foto / Pilih File Bukti Surat Jalan</span>
+                    <span>Ambil Foto / Pilih File Bukti Surat Jalan (R2)</span>
                   </>
                 )}
               </label>
@@ -132,7 +149,9 @@ export const TransshipmentModal: React.FC<TransshipmentModalProps> = ({ mileston
 
           <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
             <button type="button" className="btn btn-outline" style={{ flex: 1 }} onClick={onClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Simpan Milestone</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={isUploading}>
+              Simpan Milestone
+            </button>
           </div>
         </form>
       </div>

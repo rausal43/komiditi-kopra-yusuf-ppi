@@ -45,7 +45,7 @@ export const dbService = {
         supabase.from('timbangan').select('*').order('tgl', { ascending: false }),
         supabase.from('panjar').select('*').order('tgl', { ascending: false }),
         supabase.from('settlements').select('*').order('tglSettlement', { ascending: false }),
-        supabase.from('price_settings').select('*').single(),
+        supabase.from('price_settings').select('*').maybeSingle(),
       ]);
 
       // If queries succeeded (data is array), return data from DB (even if empty)
