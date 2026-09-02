@@ -1,0 +1,37 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # Run every day at 00:00 UTC (07:00 WIB)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping and write Supabase activity
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://vlvzoxlwlyvvdxcglgfs.supabase.co' }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsdnpveGx3bHl2dmR4Y2dsZ2ZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2OTIzNDgsImV4cCI6MjEwMjI2ODM0OH0.PQbVbugs0ZzygKLrTYHcMCQ_1XsHQTwbNjnd1mwGGKI' }}
+        run: |
+          PING_ID="KEEP-ALIVE-$(date +%s)"
+          
+          # 1. Read query
+          curl -s -f -X GET "$SUPABASE_URL/rest/v1/batches?select=id&limit=1" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY"
+            
+          # 2. Write record
+          curl -s -f -X POST "$SUPABASE_URL/rest/v1/panjar" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"id\":\"$PING_ID\",\"noKwitansi\":\"PING\",\"namaPenerima\":\"KeepAlive Bot\",\"nominalDp\":0}"
+            
+          # 3. Cleanup record
+          curl -s -f -X DELETE "$SUPABASE_URL/rest/v1/panjar?id=eq.$PING_ID" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY"
+            
+          echo "Supabase keep-alive ping success."
