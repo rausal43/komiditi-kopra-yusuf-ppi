@@ -5,7 +5,8 @@ import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { ImagePreviewModal } from './ImagePreviewModal';
 import { PaginationControl } from './PaginationControl';
 import { BatchFilterSelect } from './common/BatchFilterSelect';
-import { Plus, Scale, DollarSign, Droplets, Package, Trash2, Lock, Paperclip } from 'lucide-react';
+import { Plus, Scale, DollarSign, Droplets, Package, Trash2, Edit, Lock, Paperclip } from 'lucide-react';
+import type { TimbanganKarung } from '../types';
 
 interface TimbanganModuleProps {
   selectedBatchId?: string;
@@ -16,10 +17,11 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
   selectedBatchId: externalBatchId,
   onBatchFilterChange,
 }) => {
-  const { timbanganList, batchList, addTimbangan, deleteTimbangan, canEditOrDelete, activeModal, setActiveModal } = useApp();
+  const { timbanganList, batchList, addTimbangan, updateTimbangan, deleteTimbangan, canEditOrDelete, activeModal, setActiveModal } = useApp();
   const [internalFilterBatch, setInternalFilterBatch] = useState('ALL');
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [editingTimbangan, setEditingTimbangan] = useState<TimbanganKarung | null>(null);
   const [displayLimit, setDisplayLimit] = useState<number>(5);
 
   const selectedFilterBatch = externalBatchId !== undefined ? externalBatchId : internalFilterBatch;
@@ -178,8 +180,21 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
                         <span style={{ color: '#CBD5E1', fontSize: '10px' }}>-</span>
                       )}
                     </td>
-                    <td>
-                      {canEditOrDelete ? (
+                  <td>
+                    {canEditOrDelete ? (
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setEditingTimbangan(t)}
+                          style={{
+                            background: '#EFF6FF', border: 'none', borderRadius: '6px',
+                            padding: '4px 8px', color: '#2563EB', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
+                          }}
+                          title="Edit Transaksi (Khusus Owner)"
+                        >
+                          <Edit size={12} /> Edit
+                        </button>
                         <button
                           type="button"
                           onClick={() => setDeleteTargetId(t.id)}
@@ -192,7 +207,8 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
                         >
                           <Trash2 size={12} /> Hapus
                         </button>
-                      ) : (
+                      </div>
+                    ) : (
                         <span style={{ fontSize: '10px', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }} title="Tersimpan - Tidak dapat diubah oleh Logistik">
                           <Lock size={11} color="#64748B" /> Tersimpan
                         </span>
@@ -231,6 +247,18 @@ export const TimbanganModule: React.FC<TimbanganModuleProps> = ({
             setDeleteTargetId(null);
           }}
           onClose={() => setDeleteTargetId(null)}
+        />
+      )}
+
+      {editingTimbangan && (
+        <TimbanganModal
+          initialBatchId={selectedFilterBatch}
+          initialTimbangan={editingTimbangan}
+          onClose={() => setEditingTimbangan(null)}
+          onSubmit={data => {
+            updateTimbangan(editingTimbangan.id, data);
+            setEditingTimbangan(null);
+          }}
         />
       )}
 

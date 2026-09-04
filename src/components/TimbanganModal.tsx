@@ -7,9 +7,11 @@ import { TimbanganKarungForm, type KarungRow } from './timbangan/TimbanganKarung
 import { TimbanganSummaryBox } from './timbangan/TimbanganSummaryBox';
 import { X, Calculator, Wallet, ChevronDown } from 'lucide-react';
 import { uploadToR2 } from '../lib/r2Service';
+import type { TimbanganKarung } from '../types';
 
 interface TimbanganModalProps {
   initialBatchId?: string;
+  initialTimbangan?: TimbanganKarung;
   onClose: () => void;
   onSubmit: (data: {
     tgl: string; namaTuanToko: string; rincianKarung: number[]; totalGross: number;
@@ -19,7 +21,7 @@ interface TimbanganModalProps {
   }) => void;
 }
 
-export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, onClose, onSubmit }) => {
+export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, initialTimbangan, onClose, onSubmit }) => {
   const { panjarList, batchList, timbanganList, priceSetting } = useApp();
 
   const parseDigits = (val: string): number => {
@@ -27,25 +29,42 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
     return clean ? parseInt(clean, 10) : 0;
   };
 
-  const [namaTuanToko, setNamaTuanToko] = useState('');
-  const [tgl, setTgl] = useState(new Date().toISOString().split('T')[0]);
-  const [karungRows, setKarungRows] = useState<KarungRow[]>([
-    { berat: '', kadarAir: 6.0 },
-  ]);
-  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
-  const [taraPerKarung, setTaraPerKarung] = useState<number | ''>(1);
-  const [hargaBeliStr, setHargaBeliStr] = useState(`Rp ${priceSetting.batasBeliGudangSekely.toLocaleString('id-ID')}`);
-  const [selectedPanjarId, setSelectedPanjarId] = useState<string>('');
-  const [potonganDpStr, setPotonganDpStr] = useState('');
+  const [namaTuanToko, setNamaTuanToko] = useState(initialTimbangan?.namaTuanToko || '');
+  const [tgl, setTgl] = useState(initialTimbangan?.tgl || new Date().toISOString().split('T')[0]);
 
-  const [selectedBatchId, setSelectedBatchId] = useState(initialBatchId && initialBatchId !== 'ALL' ? initialBatchId : batchList[0]?.id || '');
+  const initialKarungRows: KarungRow[] = initialTimbangan?.rincianKarung?.map((berat, idx) => ({
+    berat,
+    kadarAir: initialTimbangan.kadarAirPerKarung?.[idx] ?? initialTimbangan.kadarAir ?? 6.0,
+    fotoUrl: initialTimbangan.fotoPerKarung?.[idx],
+  })) || [{ berat: '', kadarAir: 6.0 }];
+
+  const [karungRows, setKarungRows] = useState<KarungRow[]>(initialKarungRows);
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [taraPerKarung, setTaraPerKarung] = useState<number | ''>(
+    initialTimbangan && initialTimbangan.rincianKarung?.length
+      ? Math.round(initialTimbangan.taraKarung / initialTimbangan.rincianKarung.length) || 1
+      : 1
+  );
+  const [hargaBeliStr, setHargaBeliStr] = useState(
+    initialTimbangan
+      ? `Rp ${initialTimbangan.hargaBeliPerKg.toLocaleString('id-ID')}`
+      : `Rp ${priceSetting.batasBeliGudangSekely.toLocaleString('id-ID')}`
+  );
+  const [selectedPanjarId, setSelectedPanjarId] = useState<string>(initialTimbangan?.panjarDpId || '');
+  const [potonganDpStr, setPotonganDpStr] = useState(initialTimbangan?.potonganDp ? `Rp ${initialTimbangan.potonganDp.toLocaleString('id-ID')}` : '');
+
+  const [selectedBatchId, setSelectedBatchId] = useState(
+    initialTimbangan?.batchId || (initialBatchId && initialBatchId !== 'ALL' ? initialBatchId : batchList[0]?.id || '')
+  );
   const [showBatchPicker, setShowBatchPicker] = useState(false);
   const [showPanjarPicker, setShowPanjarPicker] = useState(false);
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
   const activeBatchObj = batchList.find(b => b.id === selectedBatchId) || batchList[0];
   const modalAwal = activeBatchObj?.modalAwalBatch || 150000000;
-  const totalBeliExisting = timbanganList.filter(t => t.batchId === activeBatchObj?.id).reduce((acc, curr) => acc + curr.totalNominalBeli, 0);
+  const totalBeliExisting = timbanganList
+    .filter(t => t.batchId === activeBatchObj?.id && t.id !== initialTimbangan?.id)
+    .reduce((acc, curr) => acc + curr.totalNominalBeli, 0);
   const currentSisaModal = Math.max(0, modalAwal - totalBeliExisting);
 
   // Calculations from karung rows
@@ -67,7 +86,7 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
   const hargaBeliPerKg = parseDigits(hargaBeliStr);
   const totalNominalBeli = Math.round(nettoBayarFinal * hargaBeliPerKg);
 
-  const batchPanjarList = panjarList.filter(p => (p.batchId === selectedBatchId || !p.batchId) && p.status !== 'Lunas');
+  const batchPanjarList = panjarList.filter(p => (p.batchId === selectedBatchId || !p.batchId) && (p.status !== 'Lunas' || p.id === selectedPanjarId));
   const panjarSelected = batchPanjarList.find(p => p.id === selectedPanjarId);
   const maxPanjarAllowed = panjarSelected ? panjarSelected.nominalDp : 0;
   const potonganDpNum = parseDigits(potonganDpStr);
@@ -114,7 +133,7 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
     const hasFoto = fotoPerKarung.some(f => f.length > 0);
 
     onSubmit({
-      tgl, namaTuanToko, rincianKarung, totalGross, taraKarung: totalTara,
+      tgl, namaTuanToko: namaTuanToko.trim(), rincianKarung, totalGross, taraKarung: totalTara,
       totalNetto: nettoBayarFinal, kadarAir: avgKadarAir, hargaBeliPerKg, totalNominalBeli,
       panjarDpId: selectedPanjarId || undefined, potonganDp: potonganDpActual, sisaPelunasan, batchId: selectedBatchId,
       kadarAirPerKarung, fotoPerKarung: hasFoto ? fotoPerKarung : undefined,
@@ -125,7 +144,7 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxHeight: '92vh', overflowY: 'auto' }}>
         <div className="modal-header">
-          <div className="modal-title">Input Timbangan Karung Lapangan</div>
+          <div className="modal-title">{initialTimbangan ? 'Edit Timbangan Karung' : 'Input Timbangan Karung Lapangan'}</div>
           <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={onClose}>
             <X size={18} color="#64748B" />
           </button>
@@ -231,7 +250,7 @@ export const TimbanganModal: React.FC<TimbanganModalProps> = ({ initialBatchId, 
           <div style={{ display: 'flex', gap: '10px' }}>
             <button type="button" className="btn btn-outline" style={{ flex: 1 }} onClick={onClose}>Batal</button>
             <button type="submit" className="btn btn-primary" style={{ flex: 2, justifyContent: 'center' }}>
-              <Calculator size={15} /> Simpan Transaksi Beli Kopra
+              <Calculator size={15} /> {initialTimbangan ? 'Simpan Perubahan Timbangan' : 'Simpan Transaksi Beli Kopra'}
             </button>
           </div>
         </form>

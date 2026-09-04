@@ -5,13 +5,15 @@ import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { ImagePreviewModal } from './ImagePreviewModal';
 import { PaginationControl } from './PaginationControl';
 import { BatchFilterSelect } from './common/BatchFilterSelect';
-import { Plus, Building2, TrendingUp, DollarSign, Award, Trash2, Lock, Paperclip } from 'lucide-react';
+import { Plus, Building2, TrendingUp, DollarSign, Award, Trash2, Edit, Lock, Paperclip } from 'lucide-react';
+import type { SettlementPabrik } from '../types';
 
 export const SettlementModule: React.FC = () => {
-  const { settlementList, batchList, addSettlement, deleteSettlement, canEditOrDelete, activeModal, setActiveModal } = useApp();
+  const { settlementList, batchList, addSettlement, updateSettlement, deleteSettlement, canEditOrDelete, activeModal, setActiveModal } = useApp();
   const [selectedFilterBatch, setSelectedFilterBatch] = useState('ALL');
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [editingSettlement, setEditingSettlement] = useState<SettlementPabrik | null>(null);
   const [displayLimit, setDisplayLimit] = useState<number>(5);
 
   const isModalOpen = activeModal === 'SETTLEMENT';
@@ -145,18 +147,32 @@ export const SettlementModule: React.FC = () => {
                   </td>
                   <td>
                     {canEditOrDelete ? (
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTargetId(s.id)}
-                        style={{
-                          background: '#FEF2F2', border: 'none', borderRadius: '6px',
-                          padding: '4px 8px', color: '#EF4444', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
-                        }}
-                        title="Hapus Settlement (Khusus Owner)"
-                      >
-                        <Trash2 size={12} /> Hapus
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setEditingSettlement(s)}
+                          style={{
+                            background: '#EFF6FF', border: 'none', borderRadius: '6px',
+                            padding: '4px 8px', color: '#2563EB', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
+                          }}
+                          title="Edit Settlement (Khusus Owner)"
+                        >
+                          <Edit size={12} /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTargetId(s.id)}
+                          style={{
+                            background: '#FEF2F2', border: 'none', borderRadius: '6px',
+                            padding: '4px 8px', color: '#EF4444', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
+                          }}
+                          title="Hapus Settlement (Khusus Owner)"
+                        >
+                          <Trash2 size={12} /> Hapus
+                        </button>
+                      </div>
                     ) : (
                       <span style={{ fontSize: '10px', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }} title="Tersimpan - Tidak dapat diubah oleh Logistik">
                         <Lock size={11} color="#64748B" /> Tersimpan
@@ -195,6 +211,17 @@ export const SettlementModule: React.FC = () => {
             setDeleteTargetId(null);
           }}
           onClose={() => setDeleteTargetId(null)}
+        />
+      )}
+
+      {editingSettlement && (
+        <SettlementModal
+          initialSettlement={editingSettlement}
+          onClose={() => setEditingSettlement(null)}
+          onSubmit={data => {
+            updateSettlement(editingSettlement.id, data);
+            setEditingSettlement(null);
+          }}
         />
       )}
 

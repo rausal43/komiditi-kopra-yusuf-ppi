@@ -3,13 +3,15 @@ import { useApp } from '../context/AppContext';
 import { BatchModal } from './BatchModal';
 import { BatchPickerModal } from './BatchPickerModal';
 import { BatchMasterTable } from './BatchMasterTable';
-import { Plus, Target, PieChart, ChevronDown } from 'lucide-react';
+import { Plus, Target, PieChart, ChevronDown, Edit } from 'lucide-react';
+import type { BatchShipment } from '../types';
 
 export const BatchSettingModule: React.FC = () => {
-  const { batchList, timbanganList, addBatch, activeModal, setActiveModal } = useApp();
+  const { batchList, timbanganList, addBatch, updateBatch, canEditOrDelete, activeModal, setActiveModal } = useApp();
 
   const [selectedBatchId, setSelectedBatchId] = useState(batchList[0]?.id || '');
   const [showBatchPickerModal, setShowBatchPickerModal] = useState(false);
+  const [editingBatch, setEditingBatch] = useState<BatchShipment | null>(null);
 
   const activeBatch = batchList.find(b => b.id === selectedBatchId) || batchList[0];
   const isBatchModalOpen = activeModal === 'BATCH';
@@ -20,11 +22,14 @@ export const BatchSettingModule: React.FC = () => {
   const tonaseTerkumpulKg = activeBatch?.beratSekely || 10240;
   const tonasePercent = Math.min(100, Math.round((tonaseTerkumpulKg / (activeBatch?.targetTonase || 10500)) * 100));
 
-
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <div className="desktop-only-btn" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+      <div className="desktop-only-btn" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '4px' }}>
+        {canEditOrDelete && activeBatch && (
+          <button className="btn btn-outline" style={{ borderRadius: '99px', padding: '8px 16px', fontSize: '11px' }} onClick={() => setEditingBatch(activeBatch)}>
+            <Edit size={14} /> Edit Batch Terpilih
+          </button>
+        )}
         <button className="btn btn-primary" style={{ borderRadius: '99px', padding: '8px 16px' }} onClick={() => setActiveModal('BATCH')}>
           <Plus size={15} /> Buat Batch Baru
         </button>
@@ -93,6 +98,17 @@ export const BatchSettingModule: React.FC = () => {
           selectedBatchId={selectedBatchId}
           onSelect={id => { setSelectedBatchId(id); setShowBatchPickerModal(false); }}
           onClose={() => setShowBatchPickerModal(false)}
+        />
+      )}
+
+      {editingBatch && (
+        <BatchModal
+          initialBatch={editingBatch}
+          onClose={() => setEditingBatch(null)}
+          onSubmit={data => {
+            updateBatch(editingBatch.id, data);
+            setEditingBatch(null);
+          }}
         />
       )}
 

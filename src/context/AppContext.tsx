@@ -55,16 +55,20 @@ interface AppContextType {
   deleteGudang: (nama: string) => void;
 
   addPanjar: (panjar: Omit<PanjarDP, 'id'>) => void;
+  updatePanjar: (id: string, panjar: Partial<PanjarDP>) => void;
   deletePanjar: (id: string) => void;
 
   addTimbangan: (timbangan: Omit<TimbanganKarung, 'id'>) => void;
+  updateTimbangan: (id: string, timbangan: Partial<TimbanganKarung>) => void;
   deleteTimbangan: (id: string) => void;
 
   addBatch: (batch: Omit<BatchShipment, 'id'>) => void;
+  updateBatch: (id: string, batch: Partial<BatchShipment>) => void;
   deleteBatch: (id: string) => void;
   updateBatchMilestone: (id: string, status: BatchShipment['statusMilestone'], lokasi: string) => void;
 
   addSettlement: (settlement: Omit<SettlementPabrik, 'id'>) => void;
+  updateSettlement: (id: string, settlement: Partial<SettlementPabrik>) => void;
   deleteSettlement: (id: string) => void;
 
   updatePriceSetting: (setting: Partial<MasterPriceSetting>) => void;
@@ -241,6 +245,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     dbService.insertPanjar(fullPanjar);
   };
 
+  const updatePanjar = (id: string, updated: Partial<PanjarDP>) => {
+    if (!canEditOrDelete) return;
+    setPanjarList(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    dbService.updatePanjar(id, updated);
+  };
+
   const deletePanjar = (id: string) => {
     if (!canEditOrDelete) return;
     setPanjarList(prev => prev.filter(p => p.id !== id));
@@ -252,10 +262,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const fullTimbangan = { ...newTimbangan, id };
     setTimbanganList(prev => [fullTimbangan, ...prev]);
     dbService.insertTimbangan(fullTimbangan);
+
+    // Auto-update panjar status if panjar is applied
+    if (newTimbangan.panjarDpId && newTimbangan.potonganDp > 0) {
+      const targetPanjar = panjarList.find(p => p.id === newTimbangan.panjarDpId);
+      if (targetPanjar) {
+        const isLunas = newTimbangan.potonganDp >= targetPanjar.nominalDp;
+        const newStatus: PanjarDP['status'] = isLunas ? 'Lunas' : 'Sisa Pelunasan';
+        setPanjarList(prev => prev.map(p => p.id === targetPanjar.id ? { ...p, status: newStatus } : p));
+        dbService.updatePanjar(targetPanjar.id, { status: newStatus });
+      }
+    }
+  };
+
+  const updateTimbangan = (id: string, updated: Partial<TimbanganKarung>) => {
+    if (!canEditOrDelete) return;
+    setTimbanganList(prev => prev.map(t => t.id === id ? { ...t, ...updated } : t));
+    dbService.updateTimbangan(id, updated);
+
+    if (updated.panjarDpId && (updated.potonganDp || 0) > 0) {
+      const targetPanjar = panjarList.find(p => p.id === updated.panjarDpId);
+      if (targetPanjar) {
+        const isLunas = (updated.potonganDp || 0) >= targetPanjar.nominalDp;
+        const newStatus: PanjarDP['status'] = isLunas ? 'Lunas' : 'Sisa Pelunasan';
+        setPanjarList(prev => prev.map(p => p.id === targetPanjar.id ? { ...p, status: newStatus } : p));
+        dbService.updatePanjar(targetPanjar.id, { status: newStatus });
+      }
+    }
   };
 
   const deleteTimbangan = (id: string) => {
     if (!canEditOrDelete) return;
+    const timbanganToDelete = timbanganList.find(t => t.id === id);
+    if (timbanganToDelete?.panjarDpId) {
+      setPanjarList(prev => prev.map(p => p.id === timbanganToDelete.panjarDpId ? { ...p, status: 'Belum Lunas' } : p));
+      dbService.updatePanjar(timbanganToDelete.panjarDpId, { status: 'Belum Lunas' });
+    }
     setTimbanganList(prev => prev.filter(t => t.id !== id));
     dbService.deleteTimbangan(id);
   };
@@ -265,6 +307,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const fullBatch = { ...newBatch, id };
     setBatchList(prev => [fullBatch, ...prev]);
     dbService.insertBatch(fullBatch);
+  };
+
+  const updateBatch = (id: string, updated: Partial<BatchShipment>) => {
+    if (!canEditOrDelete) return;
+    setBatchList(prev => prev.map(b => b.id === id ? { ...b, ...updated } : b));
+    dbService.updateBatch(id, updated);
   };
 
   const deleteBatch = (id: string) => {
@@ -291,6 +339,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
     dbService.insertSettlement(fullSettlement);
     dbService.updateBatchMilestone(newSettlement.batchId, 'Selesai Pabrik', 'Pabrik Bitung (Settlement Selesai)');
+  };
+
+  const updateSettlement = (id: string, updated: Partial<SettlementPabrik>) => {
+    if (!canEditOrDelete) return;
+    setSettlementList(prev => prev.map(s => s.id === id ? { ...s, ...updated } : s));
+    dbService.updateSettlement(id, updated);
   };
 
   const deleteSettlement = (id: string) => {
@@ -325,7 +379,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeModal, setActiveModal, belanjaSubTab, setBelanjaSubTab, openContextualFabModal,
         panjarList, timbanganList, batchList, settlementList, priceSetting, aiReports,
         daftarAkunOwner, daftarKapal, daftarGudang, addAkunOwner, editAkunOwner, deleteAkunOwner, addKapal, editKapal, deleteKapal, addGudang, editGudang, deleteGudang,
-        addPanjar, deletePanjar, addTimbangan, deleteTimbangan, addBatch, deleteBatch, updateBatchMilestone, addSettlement, deleteSettlement, updatePriceSetting, generateAIReport,
+        addPanjar, updatePanjar, deletePanjar, addTimbangan, updateTimbangan, deleteTimbangan, addBatch, updateBatch, deleteBatch, updateBatchMilestone, addSettlement, updateSettlement, deleteSettlement, updatePriceSetting, generateAIReport,
       }}
     >
       {children}

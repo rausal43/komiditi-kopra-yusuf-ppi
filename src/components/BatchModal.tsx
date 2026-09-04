@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import type { MilestoneStatus } from '../types';
+import type { MilestoneStatus, BatchShipment } from '../types';
 import { X, Wallet } from 'lucide-react';
 
 interface BatchModalProps {
+  initialBatch?: BatchShipment;
   onClose: () => void;
   onSubmit: (data: {
     namaBatch: string;
@@ -25,18 +26,24 @@ interface BatchModalProps {
   }) => void;
 }
 
-export const BatchModal: React.FC<BatchModalProps> = ({ onClose, onSubmit }) => {
+export const BatchModal: React.FC<BatchModalProps> = ({ initialBatch, onClose, onSubmit }) => {
   const { daftarAkunOwner } = useApp();
-
-  const [namaBatch, setNamaBatch] = useState('');
-  const [targetTonaseStr, setTargetTonaseStr] = useState('10.000');
-  const [modalAwalStr, setModalAwalStr] = useState('Rp 150.000.000');
-  const [sumberAkunDana, setSumberAkunDana] = useState(daftarAkunOwner[0] || 'Bank BRI Sekely');
 
   const parseDigits = (val: string): number => {
     const clean = val.replace(/\D/g, '');
     return clean ? parseInt(clean, 10) : 0;
   };
+
+  const [namaBatch, setNamaBatch] = useState(initialBatch?.namaBatch || '');
+  const [targetTonaseStr, setTargetTonaseStr] = useState(
+    initialBatch ? initialBatch.targetTonase.toLocaleString('id-ID') : '10.000'
+  );
+  const [modalAwalStr, setModalAwalStr] = useState(
+    initialBatch ? `Rp ${initialBatch.modalAwalBatch.toLocaleString('id-ID')}` : 'Rp 150.000.000'
+  );
+  const [sumberAkunDana, setSumberAkunDana] = useState(
+    initialBatch?.sumberAkunDana || daftarAkunOwner[0] || 'Bank BRI Sekely'
+  );
 
   const handleTargetTonaseChange = (val: string) => {
     const num = parseDigits(val);
@@ -52,25 +59,25 @@ export const BatchModal: React.FC<BatchModalProps> = ({ onClose, onSubmit }) => 
     e.preventDefault();
     const modalNum = parseDigits(modalAwalStr);
     const tonaseNum = parseDigits(targetTonaseStr);
-    if (!namaBatch || !modalNum) return;
+    if (!namaBatch.trim() || !modalNum) return;
 
     onSubmit({
-      namaBatch,
-      tglMulai: new Date().toISOString().split('T')[0],
+      namaBatch: namaBatch.trim(),
+      tglMulai: initialBatch?.tglMulai || new Date().toISOString().split('T')[0],
       targetTonase: tonaseNum || 10000,
-      beratSekely: 0,
+      beratSekely: initialBatch?.beratSekely || 0,
       modalAwalBatch: modalNum,
       sumberAkunDana,
-      statusMilestone: 'Gudang Sekely',
-      lokasiSaatIni: 'Penampungan Gudang Sekely',
-      biayaUpahPanggul: 2500000,
-      biayaSewaFeeder: 3500000,
-      biayaFreightSabuk: 4000000,
-      biayaUangJalan: 1200000,
-      biayaTruckingBitung: 800000,
-      biayaAdminBriLink: 200000,
-      timbanganIds: [],
-      catatan: 'Inisialisasi batch baru via Kopra Sejati App',
+      statusMilestone: initialBatch?.statusMilestone || 'Gudang Sekely',
+      lokasiSaatIni: initialBatch?.lokasiSaatIni || 'Penampungan Gudang Sekely',
+      biayaUpahPanggul: initialBatch?.biayaUpahPanggul ?? 2500000,
+      biayaSewaFeeder: initialBatch?.biayaSewaFeeder ?? 3500000,
+      biayaFreightSabuk: initialBatch?.biayaFreightSabuk ?? 4000000,
+      biayaUangJalan: initialBatch?.biayaUangJalan ?? 1200000,
+      biayaTruckingBitung: initialBatch?.biayaTruckingBitung ?? 800000,
+      biayaAdminBriLink: initialBatch?.biayaAdminBriLink ?? 200000,
+      timbanganIds: initialBatch?.timbanganIds || [],
+      catatan: initialBatch?.catatan || 'Inisialisasi batch baru via Kopra Sejati App',
     });
   };
 
@@ -78,7 +85,7 @@ export const BatchModal: React.FC<BatchModalProps> = ({ onClose, onSubmit }) => 
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', width: '92%' }}>
         <div className="modal-header">
-          <div className="modal-title">Inisialisasi Batch Baru</div>
+          <div className="modal-title">{initialBatch ? 'Edit Batch Operasional' : 'Inisialisasi Batch Baru'}</div>
           <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={onClose}>
             <X size={20} color="#64748B" />
           </button>
@@ -140,7 +147,7 @@ export const BatchModal: React.FC<BatchModalProps> = ({ onClose, onSubmit }) => 
 
           <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
             <button type="button" className="btn btn-outline" style={{ flex: 1 }} onClick={onClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Buat Batch Baru</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>{initialBatch ? 'Simpan Perubahan' : 'Buat Batch Baru'}</button>
           </div>
         </form>
       </div>

@@ -1,12 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { BatchPickerModal } from './BatchPickerModal';
-import type { PaymentMethod } from '../types';
+import type { PaymentMethod, PanjarDP } from '../types';
 import { X, Wallet, ChevronDown, Loader2, Camera } from 'lucide-react';
 import { uploadToR2 } from '../lib/r2Service';
 
 interface PanjarModalProps {
   initialBatchId?: string;
+  initialPanjar?: PanjarDP;
   onClose: () => void;
   onSubmit: (data: {
     noKwitansi: string;
@@ -18,23 +19,30 @@ interface PanjarModalProps {
     catatan: string;
     batchId?: string;
     buktiUrl?: string;
+    status?: 'Belum Lunas' | 'Sisa Pelunasan' | 'Lunas';
   }) => void;
 }
 
-export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClose, onSubmit }) => {
+export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, initialPanjar, onClose, onSubmit }) => {
   const { batchList, timbanganList } = useApp();
 
-  const [noKwitansi, setNoKwitansi] = useState('KS 31');
-  const [tgl, setTgl] = useState(new Date().toISOString().split('T')[0]);
-  const [namaPenerima, setNamaPenerima] = useState('');
-  const [nominalDpStr, setNominalDpStr] = useState('');
-  const [bank, setBank] = useState<PaymentMethod>('BRILink');
-  const [noRekening, setNoRekening] = useState('');
-  const [catatan, setCatatan] = useState('');
-  const [buktiUrl, setBuktiUrl] = useState('');
+  const parseDigits = (val: string): number => {
+    const clean = val.replace(/\D/g, '');
+    return clean ? parseInt(clean, 10) : 0;
+  };
+
+  const [noKwitansi, setNoKwitansi] = useState(initialPanjar?.noKwitansi || 'KS 31');
+  const [tgl, setTgl] = useState(initialPanjar?.tgl || new Date().toISOString().split('T')[0]);
+  const [namaPenerima, setNamaPenerima] = useState(initialPanjar?.namaPenerima || '');
+  const [nominalDpStr, setNominalDpStr] = useState(initialPanjar ? `Rp ${initialPanjar.nominalDp.toLocaleString('id-ID')}` : '');
+  const [bank, setBank] = useState<PaymentMethod>(initialPanjar?.bank || 'BRILink');
+  const [noRekening, setNoRekening] = useState(initialPanjar?.noRekening || '');
+  const [catatan, setCatatan] = useState(initialPanjar?.catatan || '');
+  const [buktiUrl, setBuktiUrl] = useState(initialPanjar?.buktiUrl || '');
+  const [status, setStatus] = useState<'Belum Lunas' | 'Sisa Pelunasan' | 'Lunas'>(initialPanjar?.status || 'Belum Lunas');
   const [isUploading, setIsUploading] = useState(false);
   const fotoInputRef = useRef<HTMLInputElement>(null);
-  const [selectedBatchId, setSelectedBatchId] = useState(initialBatchId && initialBatchId !== 'ALL' ? initialBatchId : batchList[0]?.id || '');
+  const [selectedBatchId, setSelectedBatchId] = useState(initialPanjar?.batchId || (initialBatchId && initialBatchId !== 'ALL' ? initialBatchId : batchList[0]?.id || ''));
   const [showPicker, setShowPicker] = useState(false);
 
   const handleFotoUpload = async (file: File) => {
@@ -48,11 +56,6 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const parseDigits = (val: string): number => {
-    const clean = val.replace(/\D/g, '');
-    return clean ? parseInt(clean, 10) : 0;
   };
 
   const activeBatchObj = batchList.find(b => b.id === selectedBatchId) || batchList[0];
@@ -72,17 +75,18 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const num = parseDigits(nominalDpStr);
-    if (!namaPenerima || !num) return;
+    if (!namaPenerima.trim() || !num) return;
     onSubmit({
       noKwitansi,
       tgl,
-      namaPenerima,
+      namaPenerima: namaPenerima.trim(),
       nominalDp: num,
       bank,
       noRekening,
       catatan,
       batchId: selectedBatchId,
       buktiUrl: buktiUrl || undefined,
+      status,
     });
   };
 
@@ -91,7 +95,7 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-drag-handle" />
         <div className="modal-header">
-          <div className="modal-title">Input Panjar (DP) Petani / Pengepul</div>
+          <div className="modal-title">{initialPanjar ? 'Edit Panjar (DP) Petani / Pengepul' : 'Input Panjar (DP) Petani / Pengepul'}</div>
           <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={onClose}>
             <X size={18} color="#64748B" />
           </button>
@@ -123,17 +127,16 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
           </div>
 
           <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '10px 12px', marginBottom: '12px' }}>
-            <div style={{ fontSize: '11px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-              <Wallet size={14} color="#FF5000" /> Real-Time Saldo Modal Usaha {selectedBatchId}
+            <div style={{ fontSize: '10px', color: '#64748B', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Wallet size={12} color="#10B981" /> Estimasi Saldo Tersedia Batch
             </div>
-            <div className="grid-2" style={{ fontSize: '10px' }}>
-              <div>Modal Awal: <strong>Rp {modalAwal.toLocaleString('id-ID')}</strong> ({activeBatchObj?.sumberAkunDana || 'BRI'})</div>
-              <div>Sisa Saldo Kas: <strong style={{ color: '#10B981' }}>Rp {currentSisaModal.toLocaleString('id-ID')}</strong></div>
+            <div style={{ fontSize: '14px', fontWeight: '800', color: currentSisaModal >= 0 ? '#10B981' : '#EF4444' }}>
+              Rp {currentSisaModal.toLocaleString('id-ID')}
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Nama Petani / Pengepul Kopra</label>
+            <label className="form-label">Nama Petani / Pengepul Penerima</label>
             <input type="text" className="form-input" placeholder="Contoh: Sahbudin Jabai" value={namaPenerima} onChange={e => setNamaPenerima(e.target.value)} required />
           </div>
 
@@ -150,6 +153,17 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
               />
             </div>
             <div className="form-group">
+              <label className="form-label">Status Pemotongan</label>
+              <select className="form-select" value={status} onChange={e => setStatus(e.target.value as 'Belum Lunas' | 'Sisa Pelunasan' | 'Lunas')}>
+                <option value="Belum Lunas">Belum Lunas</option>
+                <option value="Sisa Pelunasan">Sisa Pelunasan</option>
+                <option value="Lunas">Terpotong Lunas</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid-2">
+            <div className="form-group">
               <label className="form-label">Metode Pembayaran</label>
               <select className="form-select" value={bank} onChange={e => setBank(e.target.value as PaymentMethod)}>
                 <option value="BRILink">BRILink Sekely</option>
@@ -158,11 +172,10 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
                 <option value="Cash">Cash / Tunai</option>
               </select>
             </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">No. Rekening Transfer</label>
-            <input type="text" className="form-input" placeholder="BNI A/n Sahbudin Jabai" value={noRekening} onChange={e => setNoRekening(e.target.value)} />
+            <div className="form-group">
+              <label className="form-label">No. Rekening Transfer</label>
+              <input type="text" className="form-input" placeholder="BNI A/n Sahbudin Jabai" value={noRekening} onChange={e => setNoRekening(e.target.value)} />
+            </div>
           </div>
 
           <div style={{ background: '#F1F5F9', padding: '8px 12px', borderRadius: '8px', marginBottom: '12px', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -213,7 +226,7 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
 
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
             <button type="button" className="btn btn-outline" style={{ flex: 1 }} onClick={onClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Simpan & Potong Saldo</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>{initialPanjar ? 'Simpan Perubahan' : 'Simpan & Potong Saldo'}</button>
           </div>
         </form>
 
@@ -221,7 +234,7 @@ export const PanjarModal: React.FC<PanjarModalProps> = ({ initialBatchId, onClos
           <BatchPickerModal
             batchList={batchList}
             selectedBatchId={selectedBatchId}
-            onSelect={id => setSelectedBatchId(id)}
+            onSelect={id => { setSelectedBatchId(id); setShowPicker(false); }}
             onClose={() => setShowPicker(false)}
           />
         )}

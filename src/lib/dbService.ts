@@ -112,6 +112,42 @@ export const dbService = {
     }
   },
 
+  async updateTimbangan(id: string, item: Partial<TimbanganKarung>) {
+    try {
+      const { error } = await supabase.from('timbangan').update(item).eq('id', id);
+      if (error) console.error('Error updating timbangan:', error);
+    } catch (err) {
+      console.error('Supabase timbangan update error:', err);
+    }
+  },
+
+  async updatePanjar(id: string, item: Partial<PanjarDP>) {
+    try {
+      const { error } = await supabase.from('panjar').update(item).eq('id', id);
+      if (error) console.error('Error updating panjar:', error);
+    } catch (err) {
+      console.error('Supabase panjar update error:', err);
+    }
+  },
+
+  async updateBatch(id: string, item: Partial<BatchShipment>) {
+    try {
+      const { error } = await supabase.from('batches').update(item).eq('id', id);
+      if (error) console.error('Error updating batch:', error);
+    } catch (err) {
+      console.error('Supabase batch update error:', err);
+    }
+  },
+
+  async updateSettlement(id: string, item: Partial<PabrikSettlement>) {
+    try {
+      const { error } = await supabase.from('settlements').update(item).eq('id', id);
+      if (error) console.error('Error updating settlement:', error);
+    } catch (err) {
+      console.error('Supabase settlement update error:', err);
+    }
+  },
+
   // Delete functions (Owner only)
   async deleteTimbangan(id: string) {
     try {

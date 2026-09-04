@@ -5,7 +5,8 @@ import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { ImagePreviewModal } from './ImagePreviewModal';
 import { PaginationControl } from './PaginationControl';
 import { BatchFilterSelect } from './common/BatchFilterSelect';
-import { Plus, Search, Trash2, Lock, Paperclip } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, Lock, Paperclip } from 'lucide-react';
+import type { PanjarDP } from '../types';
 
 interface PanjarModuleProps {
   selectedBatchId?: string;
@@ -16,11 +17,12 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
   selectedBatchId: externalBatchId,
   onBatchFilterChange,
 }) => {
-  const { panjarList, batchList, addPanjar, deletePanjar, canEditOrDelete, activeModal, setActiveModal } = useApp();
+  const { panjarList, batchList, addPanjar, updatePanjar, deletePanjar, canEditOrDelete, activeModal, setActiveModal } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [internalFilterBatch, setInternalFilterBatch] = useState('ALL');
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [editingPanjar, setEditingPanjar] = useState<PanjarDP | null>(null);
   const [displayLimit, setDisplayLimit] = useState<number>(5);
 
   const selectedFilterBatch = externalBatchId !== undefined ? externalBatchId : internalFilterBatch;
@@ -46,7 +48,6 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Action & Filter Toolbar */}
       <div className="card" style={{ padding: '12px 18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <BatchFilterSelect
@@ -75,7 +76,6 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
         </div>
       </div>
 
-      {/* Table */}
       <div className="card">
         <div className="table-responsive">
           <table className="table">
@@ -139,18 +139,32 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
                   </td>
                   <td>
                     {canEditOrDelete ? (
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTargetId(p.id)}
-                        style={{
-                          background: '#FEF2F2', border: 'none', borderRadius: '6px',
-                          padding: '4px 8px', color: '#EF4444', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
-                        }}
-                        title="Hapus Panjar DP (Khusus Owner)"
-                      >
-                        <Trash2 size={12} /> Hapus
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setEditingPanjar(p)}
+                          style={{
+                            background: '#EFF6FF', border: 'none', borderRadius: '6px',
+                            padding: '4px 8px', color: '#2563EB', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
+                          }}
+                          title="Edit Panjar DP (Khusus Owner)"
+                        >
+                          <Edit size={12} /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTargetId(p.id)}
+                          style={{
+                            background: '#FEF2F2', border: 'none', borderRadius: '6px',
+                            padding: '4px 8px', color: '#EF4444', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700',
+                          }}
+                          title="Hapus Panjar DP (Khusus Owner)"
+                        >
+                          <Trash2 size={12} /> Hapus
+                        </button>
+                      </div>
                     ) : (
                       <span style={{ fontSize: '10px', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }} title="Tersimpan - Tidak dapat diubah oleh Logistik">
                         <Lock size={11} color="#64748B" /> Tersimpan
@@ -192,12 +206,24 @@ export const PanjarModule: React.FC<PanjarModuleProps> = ({
         />
       )}
 
+      {editingPanjar && (
+        <PanjarModal
+          initialBatchId={selectedFilterBatch}
+          initialPanjar={editingPanjar}
+          onClose={() => setEditingPanjar(null)}
+          onSubmit={data => {
+            updatePanjar(editingPanjar.id, data);
+            setEditingPanjar(null);
+          }}
+        />
+      )}
+
       {isModalOpen && (
         <PanjarModal
           initialBatchId={selectedFilterBatch}
           onClose={() => setActiveModal('NONE')}
           onSubmit={data => {
-            addPanjar({ ...data, batchId: selectedFilterBatch !== 'ALL' ? selectedFilterBatch : batchList[0]?.id, status: 'Belum Lunas' });
+            addPanjar({ ...data, batchId: selectedFilterBatch !== 'ALL' ? selectedFilterBatch : batchList[0]?.id, status: data.status || 'Belum Lunas' });
             setActiveModal('NONE');
           }}
         />

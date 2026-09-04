@@ -2,8 +2,10 @@ import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { X, Calculator, Scale, Camera, ImageIcon, Loader2 } from 'lucide-react';
 import { uploadToR2 } from '../lib/r2Service';
+import type { SettlementPabrik } from '../types';
 
 interface SettlementModalProps {
+  initialSettlement?: SettlementPabrik;
   onClose: () => void;
   onSubmit: (data: {
     batchId: string; tglMasukPabrik: string; pabrikTujuan: 'Wilmar Bitung' | 'Agro Bitung';
@@ -14,7 +16,7 @@ interface SettlementModalProps {
   }) => void;
 }
 
-export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSubmit }) => {
+export const SettlementModal: React.FC<SettlementModalProps> = ({ initialSettlement, onClose, onSubmit }) => {
   const { batchList, timbanganList, priceSetting } = useApp();
 
   const parseDigits = (val: string): number => {
@@ -22,13 +24,13 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
     return clean ? parseInt(clean, 10) : 0;
   };
 
-  const [selectedBatchId, setSelectedBatchId] = useState(batchList[0]?.id || '');
-  const [tglMasukPabrik, setTglMasukPabrik] = useState(new Date().toISOString().split('T')[0]);
-  const [pabrikTujuan, setPabrikTujuan] = useState<'Wilmar Bitung' | 'Agro Bitung'>('Wilmar Bitung');
-  const [beratGrossStr, setBeratGrossStr] = useState('10.080 kg');
-  const [kadarAirLabPercent, setKadarAirLabPercent] = useState<number | ''>(5.2);
-  const [hargaAcuanStr, setHargaAcuanStr] = useState(`Rp ${priceSetting.hargaAcuanPabrikWilmar.toLocaleString('id-ID')}`);
-  const [fotoNotaTimbang, setFotoNotaTimbang] = useState<string>('');
+  const [selectedBatchId, setSelectedBatchId] = useState(initialSettlement?.batchId || batchList[0]?.id || '');
+  const [tglMasukPabrik, setTglMasukPabrik] = useState(initialSettlement?.tglMasukPabrik || initialSettlement?.tglSettlement || new Date().toISOString().split('T')[0]);
+  const [pabrikTujuan, setPabrikTujuan] = useState<'Wilmar Bitung' | 'Agro Bitung'>(initialSettlement?.pabrikTujuan || 'Wilmar Bitung');
+  const [beratGrossStr, setBeratGrossStr] = useState(initialSettlement ? `${initialSettlement.beratGrossPabrik.toLocaleString('id-ID')} kg` : '10.080 kg');
+  const [kadarAirLabPercent, setKadarAirLabPercent] = useState<number | ''>(initialSettlement?.kadarAirLabPercent ?? 5.2);
+  const [hargaAcuanStr, setHargaAcuanStr] = useState(initialSettlement ? `Rp ${initialSettlement.hargaAcuanPabrik.toLocaleString('id-ID')}` : `Rp ${priceSetting.hargaAcuanPabrikWilmar.toLocaleString('id-ID')}`);
+  const [fotoNotaTimbang, setFotoNotaTimbang] = useState<string>(initialSettlement?.fotoNotaTimbangPabrik || initialSettlement?.lampiranNotaPabrikUrl || '');
   const [isUploading, setIsUploading] = useState(false);
   const [previewFoto, setPreviewFoto] = useState(false);
   const fotoInputRef = useRef<HTMLInputElement>(null);
@@ -98,7 +100,7 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px', width: '94%' }}>
         <div className="modal-header">
-          <div className="modal-title">Input & Rekonsiliasi Settlement Pabrik</div>
+          <div className="modal-title">{initialSettlement ? 'Edit Settlement Pabrik' : 'Input & Rekonsiliasi Settlement Pabrik'}</div>
           <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={onClose}>
             <X size={20} color="#64748B" />
           </button>
@@ -263,7 +265,7 @@ export const SettlementModal: React.FC<SettlementModalProps> = ({ onClose, onSub
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" className="btn btn-outline" style={{ flex: 1 }} onClick={onClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Simpan Settlement</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>{initialSettlement ? 'Simpan Perubahan' : 'Simpan Settlement'}</button>
           </div>
         </form>
 
